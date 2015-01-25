@@ -80,7 +80,7 @@ Given the above, OAuth 2 requests would redirect back to that URL.
 
 ### Single View Mode
 
-In *Single View* mode you will be able to see only documentation or try-it. 
+In *Single View* mode you will be able to see only documentation or try-it.
 
     <raml-console single-view></raml-console>
 
@@ -105,12 +105,13 @@ To run the console, you'll need the following:
 1. Install Sass - `gem install sass`
 1. Install grunt-cli globally - `npm install -g grunt-cli`
 1. Install bower globally - `npm install -g bower`
+1. Install grunt-war - `npm install -g grunt-war --save-dev`
 1. Install the console's NPM packages - `npm install`
 1. Install the console's Bower packages - `bower install`
 
 ### Running the server
 
-    $ grunt server
+    $ grunt
     $ open http://localhost:9000
 
 ## Testing
