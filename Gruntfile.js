@@ -3,6 +3,8 @@
 module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
 
+  grunt.loadNpmTasks('grunt-war');
+
   grunt.initConfig({
     tempdir: '.tmp',
     distdir: 'dist',
@@ -288,11 +290,40 @@ module.exports = function (grunt) {
           configFile: 'test/regression/local.protractor.conf.js'
         }
       }
-    }
+    },
+
+    /*
+	   * Build a WAR (web archive) without Maven or the JVM installed.
+	   */
+	/*jshint camelcase: false */
+	war: {
+		target: {
+		  options: {
+			war_dist_folder: '<%= distdir %>',
+			war_name: 'api-console',
+			webxml_welcome: 'index.html',
+			webxml_display_name: 'Api Console',
+			webxml_mime_mapping: [
+				{
+				  extension: 'woff',
+					mime_type: 'application/font-woff'
+				} ]
+		  },
+		  files: [
+			{
+			  expand: true,
+			  cwd: '<%= distdir %>',
+			  src: ['**'],
+			  dest: ''
+			}
+		  ]
+		}
+  	}
   });
 
   grunt.registerTask('default', [
     'build',
+    'war',
     'connect:livereload',
     'watch'
   ]);
