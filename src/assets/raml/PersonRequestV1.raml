@@ -1,0 +1,299 @@
+#%RAML 0.8
+  title: Person API
+  baseUri: http://api.covisintlabs.com/person/v1
+  protocols: [HTTPS]
+  
+  schemas:
+
+    - personRequest: |
+        {
+          "id" : "http://api.covisint.com/schema/personRegistration",
+          "$schema" : "http://json-schema.org/draft-04/schema",
+          "type" : "object",
+          "description" : "Schema representing a registration of a person.",
+          "extends" : {
+                "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+          },
+          "properties" : {
+            "version": {
+                "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+            },
+            "registrant": { 
+              "description": "The person that is being registered.  The person must be in pending status for the request to be valid.",
+              "$ref": "http://api.covisint.com/schema/resourceReference#",
+              "required": true
+            },
+            "justification" : {
+              "type" : "string",
+              "description": "The justification for the registration.",
+              "maxLength": 1000,
+              "required": true
+            },
+            "servicePackageRequest": { 
+              "properties": {
+                "packageId": { "type": "string", "required": true, "maxLength": 200, "description": "The unique service package identifier for the service package being requested at time of registration." },
+                "code": { "type": "string", "required": false, "maxLength": 50, "description": "The code associated with the requested service package.  To be specified if required by the service package." },
+                "codeKind": { "type": "string", "required": false, "maxLength": 36, "description": "The kind of code.  Only applicable if code is provided.  This field is also known as business unit." }
+              },
+              "required": true
+            }
+          }
+        }
+        
+  traits:
+    - secured:
+        usage: Apply this to any method that needs to be secured
+        description: Requests requires authentication
+        headers:
+          Authorization:
+            description: Access token that is obtained from the api authentication service
+            pattern: ^Bearer .*$
+            required: true
+        responses:
+          401:
+            description: Unauthorized request
+            # substatus codes and error messages are mentioned below:
+            # framework:security            
+    - getResponse:
+        responses:
+          404: &404
+            description: The URI requested is invalid or the resource requested does not exist.
+            # substatus codes and error messages are mentioned below:
+              # (If a resource id is a URI parameter) framework:resource:missing - A resource with the following ID was not found: {resourceId}
+              # No message for an invalid URI
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                        
+          406: &406
+            description: Unable to produce content of specified 'Accept' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to produce content of type {acceptMediaType}
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          
+          500: &500
+            description: An unknown server error occurred
+            # substatus codes and error messages are mentioned below:
+              # framework:unknown
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+    
+    -  postResponse:
+        responses:
+          406?: *406
+          415?: 
+            description: Unable to consume content of specified 'Content-Type' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to consume content of type {contentMediaType}
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema   
+                   
+          500: *500
+      
+    -  deleteResponse:
+        responses:
+          404: *404
+          500: *500                     
+# **************** The Content of resource.raml ends here          
+                  
+  /requests:
+    is: [secured]
+    description: Collection endpoint for person request resources
+    get:
+      is: [getResponse]
+      description: Performs a search for person request.
+      headers:
+        Accept:
+          description: Media type for person request.
+          example: application/vnd.com.covisint.platform.person.request.v1+json.
+          type: string
+          required: true
+      queryParameters:
+        registrantId:
+          description: Retrieve person requests for a supplied person identifier. Currently there is no restriction on number of ids used.
+          type: string
+          required: false
+      responses:
+        200:
+          description: All person requests that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.person.request.v1+json:
+              schema: personRequest
+        400:
+          description: There was a problem with the client's request
+          # substatus codes and error messages are mentioned below:
+          # framework:request
+          # framework:request:io
+          # framework:request:io:read - 
+          # framework:request:io:read:parsing
+          # framework:request:io:write
+          # framework:request:header:missing - Missing request header: {headerName}
+          # framework:request:param:missing - Missing request parameter: {queryParameterName}
+          # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+          # person.request.invalid.searchParams - Searching for registrants across different realms is not allowed
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema 
+              
+    post:
+      is: [postResponse]
+      description: Creates a new person request.
+      headers:
+        Content-type:
+          description: Media type for person request.
+          example: application/vnd.com.covisint.platform.person.request.v1+json.
+          type: string
+          required: true
+        Accept:
+          description: Media type for person request.
+          example: application/vnd.com.covisint.platform.person.request.v1+json.
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.person.request.v1+json:
+          schema: personRequest 
+      responses:
+        201:
+          description: A new person registration was created and is returned in the response body.
+          body:
+            application/vnd.com.covisint.platform.person.request.v1+json:
+              schema: personRequest
+        400:
+          description: There was a problem with the client's request
+          # substatus codes and error messages are mentioned below:
+          # framework:request
+          # framework:request:io
+          # framework:request:io:read - 
+          # framework:request:io:read:parsing
+          # framework:request:io:write
+          # framework:request:header:missing - Missing request header: {headerName}
+          # framework:request:param:missing - Missing request parameter: {queryParameterName}
+          # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+          # person.request.invalid.registrantId - Registrant id {registrantId} does not exist
+          # person.request.invalid.person.status - Registrant id {registrantId} is not in PENDING status
+          # person.request.invalid.packageId - Package id {packageId} does not exist    
+          # person.request.invalid.codeKind - Business unit's code kind {codeKind} does not exist
+          # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+          # framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema              
+      
+    /{id}:
+      description: Endpoint for a specific person request.
+      uriParameters:
+        id:
+          displayName: unique person request identifier
+          description: id of the person request
+          type: string
+          maxLength: 36
+          required: true
+      is: [secured]
+      
+      get:
+        is: [getResponse]
+        description: Returns the person request by its unique id.
+        headers:
+          Accept:
+            description: Media type for person request.
+            example: application/vnd.com.covisint.platform.person.request.v1+json.
+            type: string
+            required: true
+        responses:
+          200:
+            description: The person request was successfully retrieved
+            body:
+              application/vnd.com.covisint.platform.person.request.v1+json:
+                schema: personReques
+          404:
+            description: Resource not found.
+            # substatus codes and error messages are mentioned below:
+            # framework:resource:missing - A resource with the following ID was not found: {resourceId}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      delete:
+        is: [deleteResponse]
+        description: Deletes a person request.
+        headers:
+          Accept:
+            description: Media type for person request.
+            example: application/vnd.com.covisint.platform.person.request.v1+json.
+            type: string
+            required: false
+        responses:
+          204:
+            description: The person request was successfully deleted.
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                                                     
+    /tasks/approve:
+      is: [secured]
+      description: Approve a person request.      
+      post:
+        is: [postResponse]
+        description: Approve a person request.         
+        headers:
+        queryParameters:          
+          requestId: 
+            description: The unique identifier of the person request.
+            type: string
+            required: true
+        responses:
+          204:
+            description: The request was successfully approved.  The person is put into active status.
+          400:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # framework:resource:state:transition:unsupported - Unsupported person status transition from {status1} to {status2}
+            # framework:request:invalid:header - Invalid x-requestor header value. The correct format is {requestorType}requestor.
+            # framework:request:invalid:header:value - Invalid x-requestor header value.
+            # person.request.multiple.requestIds.not.allowed - Multiple requestIds are not allowed.
+            # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                
+

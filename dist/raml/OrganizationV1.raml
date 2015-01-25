@@ -1,0 +1,342 @@
+#%RAML 0.8
+title: Organization API
+baseUri: http://api.covisintlabs.com/organization/v1
+protocols: [HTTPS]
+
+schemas:
+
+- organization: |
+      {
+        "id" : "http://api.covisint.com/schema/organization/v1",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "A representation of an organization, according to the application/vnd.com.covisint.platform.organization.v1+json media type.",
+        "extends" : {
+          "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+        },
+        "properties" : {
+          "id": {
+             "maxLength" : 100
+          },
+          "version": {
+            "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+          },
+          "status" : { 
+            "enum" : [ "active", "suspended", "inactive", "unactivated" ], 
+            "description" : "The organization's status.  Status can be changed through tasks; value is ignored on POST or PUT requests."
+          },
+          "parentOrganization": {
+            "description": "The parent organization.  Used to create an organization hierarchy.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "rootOrganization": {
+            "description": "The organization at the root of this hierarchy.  This is the top-most organization that does not have a parent",
+            "$ref": "http://api.covisint.com/schema/resourceReference#",
+            "required": true
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "The organization's name.",
+            "maxLength" : 245,
+            "required": true
+          },
+          "addresses" : {
+            "type" : "array",
+            "description" : "A container for the organization's addresses.",
+            "minItems" : 1,
+            "items" : { "ref" : "http://api.covisint.com/schema/address#" }
+          },
+          "phones" : {
+            "type" : "array",
+            "description" : "A container for the organization's phone number(s).",
+            "minItems" : 0,
+            "items" : { "$ref" : "http://api.covisint.com/schema/phone#" }
+          },
+          "email" : {
+            "type" : "string",
+            "maxLength" : 1000, 
+            "description" : "The organization's email address."
+          },
+          "url" : {
+            "type" : "string",
+            "description" : "A URL specified for this organization.",
+            "maxLength" : 1000
+          },
+          "authDomain" : {
+            "type" : "string",
+            "description" : "This organization's authentication domain.",
+            "maxLength" : 50
+          },
+          "organizationType" : {
+            "type" : "string",
+            "description" : ".",
+            "maxLength" : 5,
+            "required" : true,
+            "default" : "AO"
+          },
+          "organizationSubtype" : {
+            "type" : "string",
+            "description" : ".",
+            "maxLength" : 10
+          },
+          "accountNumber" : {
+            "type" : "string",
+            "description" : ".",
+            "maxLength" : 50
+          },
+          "externalCode" : {
+            "type" : "string",
+            "description" : "Code assigned to identify the organization to external systems.",
+            "maxLength" : 50
+          },
+          "duns" : {
+            "type" : "string",
+            "description" : ".",
+            "maxLength" : 50
+          },
+          "classification" : {
+            "type" : "string",
+            "description" : ".",
+            "maxLength" : 100
+          },
+          "public" : {
+            "type" : "boolean",
+            "description" : "Whether this is a public organization.  Defaults to true."
+          },
+          "passwordPolicy" : {
+            "description": "The password policy associated to this particular organization.",  
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "authenticationPolicy" : {
+            "description": "The authentication policy associated to this particular organization.",  
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          }
+        }
+      }
+    
+traits:
+  - secured:
+      usage: Apply this to any method that needs to be secured
+      description: Requests requires authentication
+      headers:
+        Authorization:
+          description: Access token that is obtained from the api authentication service
+          pattern: ^Bearer .*$
+          required: true
+      responses:
+        401:
+          description: Unauthorized request
+          
+  - getResponse:
+        responses:
+          404: &404
+            description: The URI requested is invalid or the resource requested does not exist.
+            # substatus codes and error messages are mentioned below:
+              # (If a resource id is a URI parameter) framework:resource:missing - A resource with the following ID was not found: {resourceId}
+              # No message for an invalid URI
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                        
+          406: &406
+            description: Unable to produce content of specified 'Accept' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to produce content of type {acceptMediaType}
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          
+          500: &500
+            description: An unknown server error occurred
+            # substatus codes and error messages are mentioned below:
+              # framework:unknown
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+  
+  -  postResponse:
+        responses:
+          406?: *406
+          415?: &415
+            description: Unable to consume content of specified 'Content-Type' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to consume content of type {contentMediaType}
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema   
+                   
+          500: *500
+          
+  -  putResponse:
+        responses:
+          406: *406
+          409:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:resource:conflict
+            # framework:resource:conflict:id - The ID of the resource in the request, {requestedId}, does not match the ID of the given resource, {resourceId}
+            # framework:resource:conflict:version - The version of the provided resource, {requestVersion}, does not match the current version of the resource, {latestVersion}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          415: *415
+          500: *500
+          
+resourceTypes:
+  - baseMethod:
+      get:
+        headers:
+          Accept:
+            description: Used to request the appropriate organization resource media type.
+            type: string
+            required: true
+        responses:
+          404:
+            description: The specified resource does not exist.
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          500:
+            description: server error when trying to process the request
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema 
+                
+/organizations:
+    type: baseMethod
+    is: [secured]
+    description: collection endpoint for organization resources
+    get:
+      description: Performs a search for organization resources.
+      headers:
+        Accept:
+          description: Used to request the appropriate organization resource media type.
+          example: application/vnd.com.covisint.platform.organization.v1+json.
+          type: string
+          required: true
+      queryParameters:
+        name: 
+          description: Retrieve only packages with the specified name.  The search is case-insensitve.  Multiple parameters are supported and the search results will be a union.
+          type: string
+          maxLength: 255
+          required: false
+      responses:
+        200:
+          description: All services that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.service.v1+json:
+              schema: service
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]      
+    post:
+      description: Create a new organization, creating one when it doesn't exist.
+      headers:
+        Content-type:
+          description: The organization media type being sent in the entity body.
+          example: application/vnd.com.covisint.platform.organization.v1+json.
+          type: string
+          required: true
+        Accept:
+          description: The organization media type being sent in the entity body.
+          example: application/vnd.com.covisint.platform.organization.v1+json.
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.organization.v1+json:
+          schema: organization
+      responses:
+        200:
+          description: The organization was successfully updated (or created, if it didn't exist).
+          body:
+            application/vnd.com.covisint.platform.organization.v1+json:
+              schema: organization
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+           # framework:request
+           # framework:request:io
+           # framework:request:io:read
+           # framework:request:io:read:parsing
+           # framework:request:io:write
+           # framework:request:header:missing - Missing request header: {headerName}
+           # framework:request:param:missing - Missing request parameter: {queryParameterName}
+           # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+           # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+           # framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+           # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+           # organization:request:invalid:phone:type - Unsupported Phone type: {phoneType(s)}     
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema              
+                
+    /{id}:
+      type: baseMethod
+      uriParameters:
+        id:
+          description: The unique organization identifier (i.e. Global Covisint Organization ID).
+          type: string
+          maxLength: 36
+          required: true
+      is: [secured]
+      description: individual resource endpoint for organization resources
+      
+      get:
+        headers:
+          Accept:
+            description: The organization media type being sent in the entity body.
+            example: application/vnd.com.covisint.platform.organization.v1+json.
+            type: string
+            required: true
+        responses:
+          200:
+            description: The organization was successfully retrieved
+            body:
+              application/vnd.com.covisint.platform.organization.v1+json:
+                schema: organization
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]       
+      put:
+        description: Updates an organization, creating one when it doesn't exist.
+        headers:
+          Content-type:
+            description: The organization media type being sent in the entity body.
+            example: application/vnd.com.covisint.platform.organization.v1+json.
+            type: string
+            required: true
+          Accept:
+            description: The organization media type being sent in the entity body.
+            example: application/vnd.com.covisint.platform.organization.v1+json.
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.organization.v1+json:
+            schema: organization
+        responses:
+          200:
+            description: The organization was successfully updated (or created, if it didn't exist).
+            body:
+              application/vnd.com.covisint.platform.organization.v1+json:
+                schema: organization
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            # organization:request:invalid:phone:type - Unsupported Phone type: {phoneType(s)}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema

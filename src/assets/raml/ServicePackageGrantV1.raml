@@ -1,0 +1,374 @@
+  #%RAML 0.8
+  title: Package Grant API
+  baseUri: http://api.covisintlabs.com/service/v1
+  protocols: [HTTPS]
+  
+  schemas:
+        
+    - packageGrant: |
+        {
+          "id" : "http://api.covisint.com/schema/packageGrant",
+          "$schema" : "http://json-schema.org/draft-04/schema",
+          "extends" : {
+                "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+          },
+          "type" : "object",
+          "description" : "Representation of a package grant.",
+          "properties" : {
+            "version": {
+              "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+            },
+            "status" : { 
+              "type" : "string",
+              "enum" : [ "active", "revoked", "expired" ],
+              "description" : "The status of the grant.  Only required when grant is retrieved.  Not required when grant is created.",
+              "required": false
+            },
+            "grantee": {
+              "description": "The subject owning the grant",
+              "$ref": "http://api.covisint.com/schema/resourceReference#",
+              "required": true
+            },
+            "servicePackage": {
+              "description": "The granted package.",
+              "$ref": "http://api.covisint.com/schema/resourceReference#",
+              "required": true
+            }
+          }
+        }
+        
+      
+  traits:
+    - secured:
+        usage: Apply this to any method that needs to be secured
+        description: Requests requires authentication
+        headers:
+          Authorization:
+            description: Access token that is obtained from the api authentication service
+            pattern: ^Bearer .*$
+            required: true
+        responses:
+          401:
+            description: Unauthorized request
+            
+    - getResponse:
+        responses:
+          404: &404
+            description: The URI requested is invalid or the resource requested does not exist.
+            # substatus codes and error messages are mentioned below:
+              # (If a resource id is a URI parameter) framework:resource:missing - A resource with the following ID was not found: {resourceId}
+              # No message for an invalid URI
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                        
+          406: &406
+            description: Unable to produce content of specified 'Accept' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to produce content of type {acceptMediaType}
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          
+          500: &500
+            description: An unknown server error occurred
+            # substatus codes and error messages are mentioned below:
+              # framework:unknown
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+    
+    -  postResponse:
+        responses:
+          406?: *406
+          415?: &415
+            description: Unable to consume content of specified 'Content-Type' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to consume content of type {contentMediaType}
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema   
+                   
+          500: *500
+      
+    -  deleteResponse:
+        responses:
+          404: *404
+          500: *500
+    
+    -  putResponse:
+        responses:
+          406: *406
+          409:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:resource:conflict
+            # framework:resource:conflict:id - The ID of the resource in the request, {requestedId}, does not match the ID of the given resource, {resourceId}
+            # framework:resource:conflict:version - The version of the provided resource, {requestVersion}, does not match the current version of the resource, {latestVersion}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          415: *415
+          500: *500
+                  
+  /persons/{personId}/packages:
+    is: [secured]
+    description: collection endpoint for user package grant resources
+    uriParameters:
+      personId: 
+        displayName: The id of the person for whom this grant is being made.
+        description: The id of the person for whom this grant is being made.
+        type: string
+        maxLength: 36
+        required: true
+    get:
+      is: [getResponse]
+      description: Performs a search for a person's package grants.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+          type: string
+          required: true
+      responses:
+        200:
+          description: All package grants that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+              schema: packageGrant
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+    
+    /{packageId}:
+      uriParameters:
+        packageId:
+          displayName: granted package identifier
+          description: id of the granted package.
+          type: string
+          maxLength: 36
+          required: true
+      is: [secured]
+      description: individual resource endpoint for package grants
+      
+      get:
+        is: [getResponse]
+        description: Returns the package grant
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+            type: string
+            required: true
+        responses:
+          200:
+            description: The package grant was successfully retrieved
+            body:
+              application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+                schema: packageGrant
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]        
+      put:
+        is: [putResponse]
+        description: Grant (push) a package to a person.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.grant.v1+json.
+            type: string
+            required: true
+          Content-type:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.grant.v1+json.
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.package.grant.v1+json:
+            schema: packageGrant
+        responses:
+          200:
+            description: The package grant was successfully created
+            body:
+              application/vnd.com.covisint.platform.package.grant.v1+json:
+                schema: packageGrant
+                
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            # service.package.id.not.found - Could not find service package id {packagId}
+            # service.package.not.grantable - This package is not grantable.
+          409:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:resource:conflict:grantee:type - Invalid grantee type. Expected {granteeType}
+            # framework:resource:conflict:grantee:id - Invalid grantee id. Expected {granteeId}
+            # framework:resource:conflict:servicePackage:id - Invalid service package id. Expected {servicePackageId}            
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      delete:
+        is: [deleteResponse]
+        description: Revoke a package grant from a person.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.grant.v1+json.
+            type: string
+            required: false
+        responses:
+          204:
+            description: The package grant was successfully revoked
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]  
+                  
+  /organizations/{organizationId}/packages:
+    is: [secured]
+    description: collection endpoint for organization package grant resources
+    uriParameters:
+      organizationId: 
+        displayName: The id of the organization for whom this grant is being made.
+        description: The id of the organization for whom this grant is being made.
+        type: string
+        maxLength: 36
+        required: true
+    get:
+      is: [getResponse]
+      description: Performs a search for an organization's package grants.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+          type: string
+          required: true
+      responses:
+        200:
+          description: All package grants that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+              schema: packageGrant
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+    
+    /{packageId}:
+      uriParameters:
+        packageId:
+          displayName: granted package identifier
+          description: id of the granted package.
+          type: string
+          maxLength: 36
+          required: true
+      is: [secured]
+      description: individual resource endpoint for package grants
+      
+      get:
+        is: [getResponse]
+        description: Returns the package grant
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+            type: string
+            required: true
+        responses:
+          200:
+            description: The package grant was successfully retrieved
+            body:
+              application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+                schema: packageGrant
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]        
+      put:
+        is: [putResponse]
+        description: Grant (push) a package to an organization.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.grant.v1+json.
+            type: string
+            required: true
+          Content-type:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.grant.v1+json.
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.package.grant.v1+json:
+            schema: packageGrant
+        responses:
+          200:
+            description: The package grant was successfully created
+            body:
+              application/vnd.com.covisint.platform.package.grant.v1+json:
+                schema: packageGrant
+                
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            # service.package.id.not.found - Could not find service package id {packagId}
+            # service.package.not.grantable - This package is not grantable.
+          409:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:resource:conflict:grantee:type - Invalid grantee type. Expected {granteeType}
+            # framework:resource:conflict:grantee:id - Invalid grantee id. Expected {granteeId}
+            # framework:resource:conflict:servicePackage:id - Invalid service package id. Expected {servicePackageId}            
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      delete:
+        is: [deleteResponse]
+        description: Revoke a package grant from an organization.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.grant.v1+json.
+            type: string
+            required: false
+        responses:
+          204:
+            description: The package grant was successfully revoked
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+  /grants/tasks/suspend:
+    is: [secured]
+    description: used to suspend an existing service package grant.  if the grant is already suspended, then this operation has no effect.
+    post:
+      is: [postResponse]
+      description: Suspends a service grant.
+      headers:
+      queryParameters:          
+          granteeType: 
+            description: The type of entity to which the grant belongs.  
+            enum: [ person, organization ]
+            required: true
+            maxLength:  12
+          grantee: 
+            description: The unique identifier of the entity owning this grant.  This will either be an organization id or a person id, depending on the value of granteeType.
+            type: string
+            required: true
+            maxLength:  36
+          packageId: 
+            description: The id of the granted package which is getting suspended.
+            type: string
+            required: true
+            maxLength:  36
+      responses:
+        204:
+          description: The service grant was successfully suspended
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]

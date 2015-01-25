@@ -1,0 +1,287 @@
+  #%RAML 0.8
+  title: Service API
+  baseUri: http://api.covisintlabs.com/service/v1
+  protocols: [HTTPS]
+  
+  schemas:
+        
+    - service: |
+        {
+          "id" : "http://api.covisint.com/schema/service",
+          "$schema" : "http://json-schema.org/draft-04/schema",
+          "type" : "object",
+          "description" : "Schema representing a service resource.",
+          "extends" : {
+                "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+          },
+          "properties" : {
+            "id" : {
+              "maxLength" : 15
+            },
+            "version": {
+              "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+            },
+            "name" : {
+              "type" : "array",
+              "description": "Internationalized service names.",
+              "required": true,
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lang": { "type": "string", "maxLength": 10 },
+                  "text": { "type": "string", "maxLength": 2000 }
+                }
+              }
+            },
+            "parentService": {
+              "description": "The parent service.  Used to create a service hierarchy.",
+              "$ref": "http://api.covisint.com/schema/resourceReference#"
+            },
+            "category" : {
+              "type" : "array",
+              "description": "Internationalized category names.",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lang": { "type": "string", "maxLength": 10 },
+                  "text": { "type": "string", "maxLength": 2000 }
+                }
+              }
+            },
+            "owningOrganization": {
+              "description": "The organization that owns this service.",
+              "$ref": "http://api.covisint.com/schema/resourceReference#"
+            },
+            "urls": {
+              "type": "array",
+              "minItems": 1,
+              "required": true,
+              "description": "A listing of all URLs defined for this service, by type.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string", "description": "The URL type.", "maxLength": 100 },
+                  "value": { "type": "string", "description": "The URL value.", "maxLength": 4000 }
+                }
+              }
+            },
+            "remoteAppId": { 
+              "type": "string", 
+              "description": "Links this service to some remote application known to the client.", 
+              "maxLength": 500 
+            },
+            "mobileServiceId": {
+              "type": "string",
+              "description": "Mobile service id.",
+              "maxLength": 200
+            },
+            "federationConnectionWizard": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "Location of the federation connection set-up wizard.  e.g. salesforce, unauthenticated website, etc."
+            },
+            "protected": {
+              "type": "boolean",
+              "description": "Indicates whether this service is synced back to cleartrust entitlements server, and therefore protected by the ct web agent."
+            },
+            "messagingEnabled": {
+              "type": "boolean", 
+              "description": "Indicates whether to perform messaging when this service is updated."
+            }
+          }
+        }
+        
+  traits:
+    - secured:
+        usage: Apply this to any method that needs to be secured
+        description: Requests requires authentication
+        headers:
+          Authorization:
+            description: Access token that is obtained from the api authentication service
+            pattern: ^Bearer .*$
+            required: true
+        responses:
+          401:
+            description: Unauthorized request
+            
+    - getResponse:
+        responses:
+          404: &404
+            description: The URI requested is invalid or the resource requested does not exist.
+            # substatus codes and error messages are mentioned below:
+              # (If a resource id is a URI parameter) framework:resource:missing - A resource with the following ID was not found: {resourceId}
+              # No message for an invalid URI
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                        
+          406: &406
+            description: Unable to produce content of specified 'Accept' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to produce content of type {acceptMediaType}
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          
+          500: &500
+            description: An unknown server error occurred
+            # substatus codes and error messages are mentioned below:
+              # framework:unknown
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+    
+    -  postResponse:
+        responses:
+          406?: *406
+          415?: &415
+            description: Unable to consume content of specified 'Content-Type' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to consume content of type {contentMediaType}
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema   
+                   
+          500: *500
+      
+    -  deleteResponse:
+        responses:
+          404: *404
+          500: *500
+    
+    -  putResponse:
+        responses:
+          406: *406
+          409:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:resource:conflict
+            # framework:resource:conflict:id - The ID of the resource in the request, {requestedId}, does not match the ID of the given resource, {resourceId}
+            # framework:resource:conflict:version - The version of the provided resource, {requestVersion}, does not match the current version of the resource, {latestVersion}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          415: *415
+          500: *500
+              
+  /services:
+    is: [secured]
+    description: collection endpoint for service resources
+    get:
+      is: [getResponse]
+      description: Performs a search for service resources.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.service.v1+json.
+          type: string
+          required: true
+      queryParameters:
+        id:
+          description: Filter the search results by the given id.  May provide an array of ids.
+          type: string
+          maxLength: 36
+          required: false
+        name: 
+          description: Retrieve only packages with the specified name.  The search is case-insensitve.  Multiple parameters are supported and the search results will be a union.
+          type: string
+          maxLength: 300
+          required: false
+        category: 
+          description: Retrieve only packages with the specified name.  The search is case-insensitve.  Multiple parameters are supported and the search results will be a union.
+          type: string
+          maxLength: 300
+          required: false          
+        owningOrganizationId:
+          description: Filter the search results by the given owner organization id.
+          type: string
+          maxLength: 36
+          required: false
+        remoteApplicationId:
+          description: Filter the search results by given remote application id.
+          type: string
+          maxLength: 36
+          required: false
+        mobileServiceId:
+          description: Filter the search results by given mobile service id.
+          type: string
+          maxLength: 36
+          required: false
+        sortBy:
+          description: Sort the search results.
+          type: string
+          required: false
+          enum: [ "creation" ]
+      responses:
+        200:
+          description: All services that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.service.v1+json:
+              schema: service
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]      
+    /{id}:
+      uriParameters:
+        id:
+          displayName: unique service identifier
+          description: id of the service
+          type: string
+          maxLength: 36
+          required: true
+      is: [secured]
+      description: individual resource endpoint for services
+      
+      get:
+        is: [getResponse]
+        description: Returns the service by its unique id.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.v1+json.
+            type: string
+            required: true
+        responses:
+          200:
+            description: The service was successfully retrieved
+            body:
+              application/vnd.com.covisint.platform.service.v1+json:
+                schema: service
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]        
+      put:
+        is: [putResponse]
+        description: Updates a service, creating one when it doesn't exist.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.v1+json.
+            type: string
+            required: true
+          Content-type:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.v1+json.
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.service.v1+json:
+            schema: service
+        responses:
+          200:
+            description: The service was successfully updated
+            body:
+              application/vnd.com.covisint.platform.service.v1+json:
+                schema: service
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+

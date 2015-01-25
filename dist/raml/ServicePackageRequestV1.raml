@@ -1,0 +1,244 @@
+  #%RAML 0.8
+  title: Package Request API
+  baseUri: http://api.covisintlabs.com/service/v1
+  protocols: [HTTPS]
+  
+  schemas:
+    
+    - packageRequest: |
+        {
+          "id" : "http://api.covisint.com/schema/packageRequest",
+          "$schema" : "http://json-schema.org/draft-04/schema",
+          "type" : "object",
+          "description" : "Schema representing a package request resource.",
+          "extends" : {
+                "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+          },
+          "properties" : {
+            "version": {
+              "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+            },
+            "requestor": { 
+              "description": "The subject for which this request is being made",
+              "$ref": "http://api.covisint.com/schema/resourceReference#",
+              "required": true
+            },
+            "servicePackage": {
+              "description": "The package being requested.",
+              "$ref": "http://api.covisint.com/schema/resourceReference#",
+              "required": true
+            },
+            "reason": {
+              "type": "string",
+              "description": "The justification for the request.",
+              "maxLength": 1000
+            },
+            "prerequisite": {
+              "description": "The parent request, if applicable.",
+              "extends": {
+                "$ref": "http://api.covisint.com/schema/resourceReference#"
+              }
+            }
+          }
+        }      
+      
+  traits:
+    - secured:
+        usage: Apply this to any method that needs to be secured
+        description: Requests requires authentication
+        headers:
+          Authorization:
+            description: Access token that is obtained from the api authentication service
+            pattern: ^Bearer .*$
+            required: true
+        responses:
+          401:
+            description: Unauthorized request
+            
+    - getResponse:
+        responses:
+          404: &404
+            description: The URI requested is invalid or the resource requested does not exist.
+            # substatus codes and error messages are mentioned below:
+              # (If a resource id is a URI parameter) framework:resource:missing - A resource with the following ID was not found: {resourceId}
+              # No message for an invalid URI
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                        
+          406: &406
+            description: Unable to produce content of specified 'Accept' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to produce content of type {acceptMediaType}
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          
+          500: &500
+            description: An unknown server error occurred
+            # substatus codes and error messages are mentioned below:
+              # framework:unknown
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+    
+    -  postResponse:
+        responses:
+          406?: *406
+          415?: &415
+            description: Unable to consume content of specified 'Content-Type' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to consume content of type {contentMediaType}
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema   
+                   
+          500: *500
+      
+    -  deleteResponse:
+        responses:
+          404: *404
+          500: *500
+    
+    -  putResponse:
+        responses:
+          406: *406
+          409:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:resource:conflict
+            # framework:resource:conflict:id - The ID of the resource in the request, {requestedId}, does not match the ID of the given resource, {resourceId}
+            # framework:resource:conflict:version - The version of the provided resource, {requestVersion}, does not match the current version of the resource, {latestVersion}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          415: *415
+          500: *500
+            
+  /requests:
+    is: [secured]
+    description: collection endpoint for package request resources
+    get:
+      is: [getResponse]
+      description: Performs a search for package requests.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.request.v1+json.
+          type: string
+          required: true
+      queryParameters:
+        requestor.id: 
+          description: The subject requesting the package.
+          type: string
+          maxLength: 36
+          required: false
+        requestor.type: 
+          description: The type of subject requesting the package.
+          type: string
+          enum: [ "person", "organization" ]
+          required: false
+      responses:
+        200:
+          description: All package requests that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.package.request.v1+json:
+              schema: packageRequest
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+    post:
+      is: [postResponse]
+      description: Creates a new request for a package.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.request.v1+json.
+          type: string
+          required: true
+        Content-Type:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.request.v1+json.
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.package.request.v1+json:
+          schema: packageRequest
+      responses:
+        200:
+          description: The package request was successfully created
+          body:
+            application/vnd.com.covisint.platform.package.request.v1+json:
+              schema: packageRequest
+                
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request
+          # framework:request:io
+          # framework:request:io:read - 
+          # framework:request:io:read:parsing
+          # framework:request:io:write
+          # framework:request:header:missing - Missing request header: {headerName}
+          # framework:request:param:missing - Missing request parameter: {queryParameterName}
+          # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+          # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName} 
+          # service.package.not.found - The requested service package does not exist.
+          # service.package.not.requestable - The requested service package was marked as non-requestable.
+          # service.package.request.parent.id.not.found - The parent request id was not found.
+          # requestor.type.invalid - Only person requestors are supported
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application] 
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+                
+    /{id}:
+      uriParameters:
+        id:
+          displayName: unique request identifier
+          description: id of the package request
+          type: string
+          maxLength: 36
+          required: true
+      is: [secured]
+      description: individual resource endpoint for package requests
+      
+      get:
+        is: [getResponse]
+        description: Returns the package request
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.request.v1+json.
+            type: string
+            required: true
+        responses:
+          200:
+            description: The package request was successfully retrieved
+            body:
+              application/vnd.com.covisint.platform.package.request.v1+json:
+                schema: packageRequest
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]        
+      delete:
+        is: [deleteResponse]
+        description: Deletes (cancels) an existing package request.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.request.v1+json.
+            type: string
+            required: false
+        body:
+          application/vnd.com.covisint.platform.package.request.v1+json:
+            schema: packageRequest
+        responses:
+          204:
+            description: The package request was successfully deleted
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]                            

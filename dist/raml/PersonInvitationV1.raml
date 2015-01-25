@@ -1,0 +1,458 @@
+  #%RAML 0.8
+  title: Person API
+  baseUri: http://api.covisintlabs.com/person/v1
+  protocols: [HTTPS]
+  
+  schemas:
+
+    - personInvitation: |
+        {
+          "id" : "http://api.covisint.com/schema/personInvitation",
+          "$schema" : "http://json-schema.org/draft-04/schema",
+          "type" : "object",
+          "description" : "Schema representing an invitation for a person to register.",
+          "extends" : {
+                "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+          },
+          "properties" : {   
+            "version": {
+                "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+            },         
+            "email" : {
+              "type" : "string",
+              "description": "The email address that is to receive the invitation.",
+              "maxLength": 500,
+              "required": true
+            },
+            "invitor": { 
+              "description": "The person that is sending the invitation.",
+              "$ref": "http://api.covisint.com/schema/resourceReference#",
+              "required": true
+            },                           
+            "invitee": { 
+              "description": "An unactivated person that is to be used during the registration initiated by this invitation.  This is an optional way to prepopulate user attributes at invitation time.",
+              "$ref": "http://api.covisint.com/schema/resourceReference#"
+            },   
+            "targetOrganization": { 
+              "description": "Organization that the person will join as a result of the registration initiatied by this invitation.",
+              "$ref": "http://api.covisint.com/schema/resourceReference#",
+              "required": true
+            },
+            "invitationCode" : {
+              "type" : "string",
+              "description": "A system-generated invitation code.  This can aid in verification for systems requiring a secured invitation process.",
+              "maxLength": 500
+            }                                      
+          }
+        }
+        
+  traits:
+    - secured:
+        usage: Apply this to any method that needs to be secured
+        description: Requests requires authentication
+        headers:
+          Authorization:
+            description: Access token that is obtained from the api authentication service
+            pattern: ^Bearer .*$
+            required: true
+        responses:
+          401:
+            description: Unauthorized request
+            # substatus codes and error messages are mentioned below:
+            # framework:security            
+    - getResponse:
+        responses:
+          404: &404
+            description: The URI requested is invalid or the resource requested does not exist.
+            # substatus codes and error messages are mentioned below:
+              # (If a resource id is a URI parameter) framework:resource:missing - A resource with the following ID was not found: {resourceId}
+              # No message for an invalid URI
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                        
+          406: &406
+            description: Unable to produce content of specified 'Accept' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to produce content of type {acceptMediaType}
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          
+          500: &500
+            description: An unknown server error occurred
+            # substatus codes and error messages are mentioned below:
+              # framework:unknown
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+    
+    -  postResponse:
+        responses:
+          406?: *406
+          415?: &415
+            description: Unable to consume content of specified 'Content-Type' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to consume content of type {contentMediaType}
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema   
+                   
+          500: *500
+      
+    -  deleteResponse:
+        responses:
+          404: *404
+          500: *500
+    -  putResponse:
+        responses:
+          406: *406
+          409:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:resource:conflict
+            # framework:resource:conflict:id - The ID of the resource in the request, {requestedId}, does not match the ID of the given resource, {resourceId}
+            # framework:resource:conflict:version - The version of the provided resource, {requestVersion}, does not match the current version of the resource, {latestVersion}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          415: *415
+          500: *500
+          
+  /personInvitations:
+    is: [secured]
+    description: Collection endpoint for person invitation resources
+    get:
+      is: [getResponse]
+      description: Performs a search for person invitations.
+      headers:
+        Accept:
+          description: Media type for person invitation.
+          example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+          type: string
+          required: true
+      queryParameters:
+        invitorId: 
+          description: Only retrieve person invitations for a certain invitor. Currently there is no restriction on number of ids used.
+          type: string
+          required: false
+        inviteeId: 
+          description: Only retrives person invitations for a certain invitee. Currently there is no restriction on number of ids used.
+          type: string
+          required: false
+      responses:
+        200:
+          description: All person invitations that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.person.invitation.v1+json:
+              schema: personInvitation
+        400:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # person.invitation.invalid.combination.queryParamaters - Searching for persons across different realms is not allowed
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]             
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+
+                     
+    post:
+      is: [postResponse]
+      description: Creates a new person invitation.
+      headers:
+        Content-type:
+          description: Media type for person invitation.
+          example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+          type: string
+          required: true
+        Accept:
+          description: Media type for person invitation.
+          example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.person.invitation.v1+json:
+          schema: personInvitation 
+      responses:
+        201:
+          description: A new person invitation was created and is returned in the response body.
+          body:
+            application/vnd.com.covisint.platform.person.invitation.v1+json:
+              schema: personInvitation
+        400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # person.invitation.invalid.emailIdFormat - Invalid email id format {emailId}
+            # person.invitation.invalid.invitorId - Invitor id {invitorId} does not exist
+            # person.invitation.invalid.inviteeId - Invitee id {inviteeId} does not exist
+            # person.invitation.invalid.inviteeStatus - Invitee id {inviteeId} is not in UNACTIVATED status.
+            # person.invitation.invalid.targetOrganizationId - Target organization id {orgId} does not exist
+            # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+            # framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema             
+      
+    /{id}:
+      description: Endpoint for a specific person invitation.
+      uriParameters:
+        id:
+          displayName: unique person invitation identifier
+          description: id of the person invitation
+          type: string
+          maxLength: 36
+          required: true
+      is: [secured]
+      
+      get:
+        is: [getResponse]
+        description: Returns the person invitation by its unique id.
+        headers:
+          Accept:
+            description: Media type for person invitation.
+            example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+            type: string
+            required: true
+        responses:
+          200:
+            description: The person invitation was successfully retrieved
+            body:
+              application/vnd.com.covisint.platform.person.invitation.v1+json:
+                schema: personInvitation                  
+          400:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+      delete:
+        is: [deleteResponse]
+        description: Deletes a person invitation.
+        headers:
+          Accept:
+            description: Media type for person invitation.
+            example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+            type: string
+            required: false
+        responses:
+          204:
+            description: The person invitation was successfully deleted.
+          400:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+                 
+      /servicePackages:
+        is: [secured]
+        description: Packages associated with an invitation.
+        get:
+          is: [getResponse]
+          description: Returns the service packages associated to an invitation.
+          headers:
+            Accept:
+              description: Media type for service package.
+              example: application/vnd.com.covisint.platform.resourceReferences.v1+json.
+              type: string
+              required: true
+          responses:
+            200:
+              description: The references to the packages were successfully retrieved.  This will be an empty array if no packages exist.
+              body:
+                application/vnd.com.covisint.platform.resourceReferences.v1+json:
+                  schema: resourceReferences
+            400:
+              description: There was a problem with the client's request
+              # substatus codes are mentioned below:
+              # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]      
+        /{id}:
+          uriParameters:
+            id:
+              displayName: unique service package identifier
+              description: id of the service
+              type: string
+              maxLength: 36
+              required: true
+          is: [secured]
+        
+          put:  
+            is: [putResponse]           
+            description: Sets a packages as being part of an invitation.
+            headers:
+              Content-type:
+                description: Media type for service package.
+                example: application/vnd.com.covisint.platform.resourceReferences.v1+json.
+                type: string
+                required: true
+              Accept:
+                description: Media type for service package.
+                example: application/vnd.com.covisint.platform.resourceReferences.v1+json.
+                type: string
+                required: true
+            responses:
+              200: 
+                description: The service package was successfully added to the invitation.
+                body:
+                  application/vnd.com.covisint.platform.resourceReference.v1+json:
+                    schema: resourceReference
+              400:
+                description: There was a problem with the client's request
+                # substatus codes are mentioned below:
+                # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]      
+          delete:  
+            is: [deleteResponse]
+            description: Deletes the package from being associated to the invitation.
+            headers:
+              Accept:
+                description: Media type for service package.
+                example: application/vnd.com.covisint.platform.resourceReferences.v1+json.
+                type: string
+                required: false
+            responses:
+              204: 
+                description: The package was successfully deleted from the invitation.          
+              400:
+                description: There was a problem with the client's request
+                # substatus codes are mentioned below:
+                # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+          /codes:
+            is: [secured]        
+            get:
+              is: [getResponse]
+              description: Returns the service codes associated to a service package associated to an invitation.
+              headers:
+                Accept:
+                  description: Media type for service code.
+                  example: application/vnd.com.covisint.platform.service.codes.v1+json.
+                  type: string
+                  required: true
+              responses:
+                200:
+                  description: The service codes were successfully retrieved.  This will be an empty array if no codes exist.
+                  body:
+                    application/vnd.com.covisint.platform.service.codes.v1+json:
+                      schema: service.codes
+                400:
+                  description: There was a problem with the client's request
+                  # substatus codes are mentioned below:
+                  # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            put:  
+              is: [putResponse]
+              description: Updates the codes for a service package associated to an invitation.
+              headers:
+                Content-type:
+                  description: Media type for service code.
+                  example: application/vnd.com.covisint.platform.service.codes.v1+json.
+                  type: string
+                  required: true
+                Accept:
+                  description: Media type for service code.
+                  example: application/vnd.com.covisint.platform.service.codes.v1+json
+                  type: string
+                  required: true
+              responses:
+                200: 
+                  description: The service codes were successfully updated.
+                  body:
+                    application/vnd.com.covisint.platform.service.codes.v1+json:
+                      schema: service.codes
+                400:
+                  description: There was a problem with the client's request
+                  # substatus codes are mentioned below:
+                  # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+                      
+            delete:
+              is: [deleteResponse]  
+              description: Updates the codes for a service associated to an invitation.
+              headers:
+                Accept:
+                  description: Media type for service code.
+                  example: application/vnd.com.covisint.platform.service.codes.v1+json.
+                  type: string
+                  required: false
+              responses:
+                204: 
+                  description: The codes were successfully deleted.       
+                400:
+                  description: There was a problem with the client's request
+                  # substatus codes are mentioned below:
+                  # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+    /tasks/accept:
+      is: [secured]
+      description: Task to accept the person invitation.      
+      post:
+        is: [postResponse]
+        description: Accept the person invitation.  This also results in the invitation being deleted.   
+        headers:
+        queryParameters:          
+          inviteId: 
+            description: The unique identifier of the invitation being accepted. 
+            type: string
+            required: true
+            maxLength:  36
+          createdPersonId: 
+            description: The unique identifier of the person created during the registration process that was initiated by the accepted invitation.  This is specified solely for tracking purposes.
+            type: string
+            required: true
+            maxLength:  36
+        responses:
+              204: 
+                description: The invitation was successfully accepted.
+              400:
+                description: There was a problem with the client's request
+                # substatus codes and error messages are mentioned below:
+                # framework:request
+                # framework:request:io
+                # framework:request:io:read - 
+                # framework:request:io:read:parsing
+                # framework:request:io:write
+                # framework:request:header:missing - Missing request header: {headerName}
+                # framework:request:param:missing - Missing request parameter: {queryParameterName}
+                # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+                # person.invitation.invalid.inviteId - Invite id {inviteId} does not exist
+                # person.invitation.invalid.personId - Person id {personId} does not exist
+                # person.invitation.multiple.inviteIds.not.allowed - Multiple inviteIds are not allowed.
+                # person.invitation.multiple.createdPersonIds.not.allowed - Multiple createdPersonIds are not allowed.
+                # person.invitation.conflict.personId - Person id {personId} is not matching with the invited id {inviteeId}.
+                # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+                # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application] 
+                body:
+                  application/vnd.com.covisint.error.v1+json:
+                    schema: errorResponseSchema         
+
