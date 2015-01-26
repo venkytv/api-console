@@ -1164,7 +1164,7 @@ th {
 }
 
 .raml-console-body {
-  background: #eee;
+  background: #fff;
   color: #888;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 18px;
@@ -1211,7 +1211,7 @@ th {
 }
 
 .raml-console-embedded {
-  background: #eee !important;
+  background: #fff !important;
   color: #888;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 18px;
