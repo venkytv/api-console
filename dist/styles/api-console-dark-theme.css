@@ -4220,6 +4220,11 @@ span.raml-console-side-bar-required-field {
   margin-left: 72px;
 }
 
+.raml-console-iframe_spacer {
+  width: 100%;
+  height: 200px;
+}
+
 /*
 
 Orginal Style from ethanschoonover.com/solarized (c) Jeremy Hull <sourdrums@gmail.com>
