@@ -6059,7 +6059,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "  </div>\r" +
     "\n" +
-    "  <div class=\"iframe_spacer\"/>\r" +
+    "  <div class=\"raml-console-iframe_spacer\"/>\r" +
     "\n" +
     "</main>\r" +
     "\n"
