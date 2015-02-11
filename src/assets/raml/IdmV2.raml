@@ -1,0 +1,251 @@
+#%RAML 0.8
+title: IDM Roles
+baseUri: https://api.covisintlabs.com/idm/v2
+protocols: [HTTPS]
+schemas:
+  - errorResponseSchema: |
+       {
+         "id" : "http://api.covisint.com/schema/errorResponseSchema",
+         "$schema" : "http://json-schema.org/draft-04/schema",
+         "type" : "object",
+         "description" : "Representation of an HTTP 4xx/5xx error response.",
+         "properties" : {
+           "status" : { 
+             "type" : "number",
+             "minimum" : 400,
+             "maximum" : 599,
+             "description" : "The HTTP status code.",
+             "required": true
+           },
+           "apiMessage" : { 
+             "type" : "string",
+             "description" : "A helpful, human-readable description of the error, useful for basic diagnostics." 
+           },
+           "apiStatusCode" : {
+             "type" : "string",
+             "description" : "The API-specific status code."
+           }
+
+         }
+       }
+  
+traits:
+  - secured:
+      usage: Apply this to any method that needs to be secured
+      description: Requests requires authentication using a bearer token.
+      headers:
+        Authorization:
+          description: Access token that is obtained from the /token endpoint of the oauth API.
+          pattern: ^Bearer .*$
+          example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+          required: true
+      responses:
+        401: &401
+          description: Unauthenticated request.  This is returned if the access token is missing, invalid, or expired.  Access tokens are obtained through the /token endpoint of the Oauth API.
+          body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+        403: &403
+          description: Unauthorized request.  The requestor is not authorized to perform the requested operation.  
+          body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+  - getResponse:
+        responses:
+          404: &404
+            description: The URI requested is invalid or the resource requested does not exist.
+            # substatus codes and error messages are mentioned below:
+            # (If a resource id is a URI parameter) framework:resource:missing - A resource with the following ID was not found: {resourceId}
+            # No message for an invalid URI
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          
+          500: &500
+            description: An unknown server error occurred
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+  -  postResponse:
+        responses:
+          500: *500
+  -  deleteResponse:
+        responses:
+          404: *404
+          500: *500
+  -  putResponse:
+        responses:
+          404: *404 
+          500: *500
+                
+/roles:
+  is: [secured]
+  description: Collection endpoint for role resources
+  get:
+    is: [getResponse]
+    description: |
+      ## Search Roles
+      * Existing roles can be retrieved via query parameters.
+      * To retrieve roles, the client sends a GET requests to the Resource endpoint; e.g., /Roles.
+      * If the idpUserID is passed as input then the admin grantable roles for that user will be returned.
+      * If the idpUserID were not passed as input then the admin manageable roles will be returned.
+      * If the roles exist, the service responds with a status code of 200 and includes the result in the body of the response.
+    headers:
+    queryParameters:
+      idpUserID: 
+        description: The IDP User ID (login ID) of the user.  See above description for more information.
+        type: string
+        maxLength: 
+        required: false
+    responses:
+      200:
+        description: All services that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/json:
+      400:
+        description: There was a problem with the client's request
+        # substatus codes are mentioned below:
+        # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]  
+  /{roleId}:
+    uriParameters:
+      roleId:
+        description: The unique identifier of the role.
+        type: string
+        maxLength: 255
+        required: true  
+    is: [secured]
+    description: A specific role.
+    get:
+      is: [getResponse]
+      description: |
+        ## Get a single role
+        If the role exists, the service responds with a status code of 200 and includes the single role in the body of the response. 
+      headers:
+      queryParameters:
+      responses:
+        200:
+          description: All services that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/json:
+              example: |
+                {
+                  "data":{
+                    "statusCode":"200",
+                    "subStatusCode":"",
+                    "roles":[
+                      {
+                        "roleID":"1",
+                        "name":"Super User",
+                        "externalRoleID":"SUPER_USERS",
+                        "privileges":[
+                          {
+                            "privilegeID":"100001",
+                            "name":"Super User"
+                          }
+                        ]
+                      },
+                      {
+                        "roleID":"2",
+                        "name":"Application Admin",
+                        "externalRoleID":"APP_ADMIN",
+                        "privileges":[
+                          {
+                            "privilegeID":"100002",
+                            "name":"App Admin"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }                
+        400:
+          description: There was a problem with the client's request
+            
+/users/{userId}/roles:
+  uriParameters:
+    userId:
+      description: The IDP User ID of the user.
+      type: string
+      maxLength: 8
+      required: true  
+  is: [secured]
+  description: Collection endpoint for role resources
+  get:
+    is: [getResponse]
+    description: |
+      ## Retrieve User Roles
+      If the user exists, the service responds with a status code of 200 and includes the result in the body of the response.
+    headers:
+    queryParameters:
+    responses:
+      200:
+        description: All services that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/json:
+              example: |
+                {
+                  "data":{  
+                    "statusCode":"200",
+                    "subStatusCode":"",
+                    "roles":[
+                      {
+                        "roleID":"1",
+                        "name":"Super User",
+                        "externalRoleID":"SUPER_USERS",
+                        "privileges":[
+                          {
+                            "privilegeID":"100001",
+                            "name":"Super User"
+                          }
+                        ]
+                      },
+                      {
+                        "roleID":"2",
+                        "name":"Application Admin",
+                        "externalRoleID":"APP_ADMIN",
+                        "privileges":[
+                          {
+                            "privilegeID":"100002",
+                            "name":"App Admin"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+      400:
+        description: There was a problem with the client's request
+        # substatus codes are mentioned below:
+        # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]        
+  /{roleId}:
+    uriParameters:
+      roleId:
+        description: The unique identifier of the role.
+        type: string
+        maxLength: 255
+        required: true  
+    is: [secured]
+    description: A user's role.
+    put:
+      is: [putResponse]
+      description: |
+        ## Remove User Role
+        An existing user can have a role removed/revoked using a PUT request.
+        If the user exists, the service responds with a status code of 200 and includes the result in the body of the response.
+      headers:
+      queryParameters:
+        status: 
+          description: Set as DELETE to remove the role.
+          type: string
+          maxLength: 
+          required: true
+          example: DELETE
+      responses:
+        200:
+          description: All services that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/json:
+        400:
+          description: There was a problem with the client's request
+  
+  

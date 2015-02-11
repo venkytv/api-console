@@ -1,0 +1,289 @@
+#%RAML 0.8
+title: OAuth API
+baseUri: https://api.covisintlabs.com/oauth/v1
+#baseUri: http://localhost:10001/oauth/v1
+protocols: [HTTPS]
+securitySchemes:
+  - basic:
+      type: Basic Authentication 
+
+schemas:
+#common-schema
+
+  - subject: |
+      {
+        "id" : "http://api.covisint.com/schema/subject",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a subject.",
+        "extends" : {
+              "$ref" : "realmScopedResource"
+        }
+      }
+  - grantType: |
+      {
+        "id" : "http://api.covisint.com/schema/grantType",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a grant type.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+        },
+        "properties" : {
+          "type": {
+            "type" : "string",
+            "maxLength": "64",
+            "description": "Grant type value(client_credentials or certificate).",
+            "required": true
+          },
+          "subjectId": {
+            "type" : "string",
+            "maxLength": "64",
+            "description": "The subject.",
+            "required":true
+          },
+          "applicationId": {
+            "type" : "string",
+            "maxLength": "64",
+            "description": "The application id of subject",
+            "required":true
+          }
+        }
+      }
+  - clientSecretGrantType: |
+      {
+        "id" : "http://api.covisint.com/schema/clientSecretGrantType",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a client secret grant type.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/grantType#"
+        },
+        "properties" : {
+          "clientSecret" : {
+            "type" : "string",
+            "maxLength": "128",
+            "description": "Client secret.",
+            "required": true
+          }
+        }
+      }
+  - certificateGrantType: |
+      {
+        "id" : "http://api.covisint.com/schema/certificateGrantType",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a client secret grant type.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/grantType#"
+        },
+        "properties" : {
+          "publicKey" : {
+            "type" : "string",
+            "maxLength": "2048",
+            "description": "Public key for the resource.",
+            "required": true
+          }
+        }
+      }
+
+  - token: |
+      {
+        "id" : "http://api.covisint.com/schema/token",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a token for a subject grant type.",
+        "properties" : {
+             "creation" : {
+             "description": "Epoch creation time, in milliseconds.",
+             "required": true
+          },
+          "access_token" : {
+            "type" : "string",
+            "description": "Access token string.",
+            "required": true
+          },
+          "expires_in" : {
+            "type" : "string",
+            "description": "Access token lifetime, in seconds.",
+            "required": true
+          },
+          "token_type" : {
+            "type" : "string",
+            "description": "Access token type. Only bearer type is currently supported.",
+            "required": true
+          }
+        }
+      }
+
+  - subject: |
+      {
+        "id" : "http://api.covisint.com/schema/subject",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a subject.",
+        "extends" : {
+              "$ref" : "realmScopedResource"
+        }
+      }
+  - grantType: |
+      {
+        "id" : "http://api.covisint.com/schema/grantType",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a grant type.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+        },
+        "properties" : {
+          "type": {
+            "type" : "string",
+            "maxLength": "64",
+            "description": "Grant type value(client_credentials or certificate).",
+            "required": true
+          },
+          "subjectId": {
+            "type" : "string",
+            "maxLength": "64",
+            "description": "The subject.",
+            "required":true
+          },
+          "applicationId": {
+            "type" : "string",
+            "maxLength": "64",
+            "description": "The application id of subject",
+            "required":true
+          }
+        }
+      }
+  - clientSecretGrantType: |
+      {
+        "id" : "http://api.covisint.com/schema/clientSecretGrantType",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a client secret grant type.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/grantType#"
+        },
+        "properties" : {
+          "clientSecret" : {
+            "type" : "string",
+            "maxLength": "128",
+            "description": "Client secret.",
+            "required": true
+          }
+        }
+      }
+  - certificateGrantType: |
+      {
+        "id" : "http://api.covisint.com/schema/certificateGrantType",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a client secret grant type.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/grantType#"
+        },
+        "properties" : {
+          "publicKey" : {
+            "type" : "string",
+            "maxLength": "2048",
+            "description": "Public key for the resource.",
+            "required": true
+          }
+        }
+      }
+
+  - token: |
+      {
+        "id" : "http://api.covisint.com/schema/token",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a token for a subject grant type.",
+        "properties" : {
+             "creation" : {
+             "description": "Epoch creation time, in milliseconds.",
+             "required": true
+          },
+          "access_token" : {
+            "type" : "string",
+            "description": "Access token string.",
+            "required": true
+          },
+          "expires_in" : {
+            "type" : "string",
+            "description": "Access token lifetime, in seconds.",
+            "required": true
+          },
+          "token_type" : {
+            "type" : "string",
+            "description": "Access token type. Only bearer type is currently supported.",
+            "required": true
+          }
+        }
+      }
+traits:
+#common-traits
+
+/token:
+  securedBy: [basic]
+  description: Collection endpoint for Token resources
+  post:
+    is: [postResponse]
+    description: Create token for a subject grant type (e.g., client credentials of client id and client secret). The token can be used for bearer-type authentication in other API calls.
+    headers:
+      Authorization:
+        description: Basic authorization, using the client id and client secret issued during application provisioning.  To use the API console switch the Security Scheme to Basic Authentication and enter the client id in the Username field and client secret in the Password field.  This will set the Authorization header properly.
+        pattern: ^Basic .*$
+        example: Basic aWQ6cGFzc3dvcmQ=
+        required: true    
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.oauth.token.v1+json
+        type: string
+        required: true
+      type:
+        description: Subject grant type. Curently supported value is "client_credentials".
+        example: client_credentials
+        type: string
+        required: true
+      application-id:
+        description: The unique identifier of the application making the token request.  This must match the application id attached to the grant assiciated with the client id and client secret provided in the Authorization header. 
+        type: string
+        required: true
+    body:
+    responses:
+      200:
+          description: Successfully created and returned token. This token is used in a Bearer-type Authorization header for authentication to all other API calls.
+          body:
+            application/vnd.com.covisint.platform.oauth.token.v1+json:
+              schema: token
+      401:
+        description: Unauthorized request. This is returned if the client id and/or client secret is not valid. 
+        body: 
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema   
+        #error messages are mentioned below :
+          # No grant type information found. Allowed values: client_credentials.
+          # Unable to find AbstractGrantType type.
+          # Unable to find AbstractGrantType builder for class type.
+          # Provided grant type information cannot be authenticated.
+          # Unable to authenticate user.Error Message: No authentication client defined.
+          # Unable to authenticate user.Error Message: No user information provided.
+      
+      400:
+        description: There was a problem with the client's request
+        # substatus codes and error messages are mentioned below:
+        # framework:request
+        # framework:request:io
+        # framework:request:io:read - 
+        # framework:request:io:read:parsing
+        # framework:request:io:write
+        # framework:request:header:missing - Missing request header: {headerName}
+        # framework:request:param:missing - Missing request parameter: {queryParameterName}
+        # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+        # person.request.invalid.searchParams - Searching for registrants across different realms is not allowed
+        # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema 
+

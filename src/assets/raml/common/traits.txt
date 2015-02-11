@@ -1,0 +1,80 @@
+# -------------------------------------------------------------------------------------------------------------------- Start Common Traits
+  - secured:
+      usage: Apply this to any method that needs to be secured
+      description: Requests requires authentication using a bearer token.
+      headers:
+        Authorization:
+          description: Access token that is obtained from the /token endpoint of the oauth API.
+          pattern: ^Bearer .*$
+          example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+          required: true
+      responses:
+        401: &401
+          description: Unauthenticated request.  This is returned if the access token is missing, invalid, or expired.  Access tokens are obtained through the /token endpoint of the Oauth API.
+          body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+        403: &403
+          description: Unauthorized request.  The requestor is not authorized to perform the requested operation.  
+          body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+  - getResponse:
+        responses:
+          404: &404
+            description: The URI requested is invalid or the resource requested does not exist.
+            # substatus codes and error messages are mentioned below:
+            # (If a resource id is a URI parameter) framework:resource:missing - A resource with the following ID was not found: {resourceId}
+            # No message for an invalid URI
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                        
+          406: &406
+            description: Unable to produce content of specified 'Accept' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to produce content of type {acceptMediaType}
+            body: 
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          
+          500: &500
+            description: An unknown server error occurred
+            # substatus codes and error messages are mentioned below:
+              # framework:unknown
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema                  
+  -  postResponse:
+        responses:
+          406: *406
+          415: &415
+            description: Unable to consume content of specified 'Content-Type' media type
+            # substatus codes and error messages are mentioned below:
+              # framework:request:unsupported:mediatype - The server is unable to consume content of type {contentMediaType}
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema   
+                   
+          500: *500
+  -  deleteResponse:
+        responses:
+          404: *404
+          406: *406
+          500: *500
+  -  putResponse:
+        responses:
+          404: *404
+          406: *406
+          409: &409
+            description: There is a conflict in identifying the resource being acted on.  There are two categories.  (1) The unique identifier in the URL and in the body are different.  (2) The current version of the resource being updated and the version sent in the body of the request. This may be an indication that the resource has changed since the client loaded it. The conflict should be resolved and the update resubmitted with the current version of the resource.
+            # framework:resource:conflict
+            # framework:resource:conflict:id - The ID of the resource in the request, {requestedId}, does not match the ID of the given resource, {resourceId}
+            # framework:resource:conflict:version - The version of the provided resource, {requestVersion}, does not match the current version of the resource, {latestVersion}
+            body:      
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema   
+          415: *415
+          500: *500
+
+# --------------------------------------------------------------------------------------------------------------- End Common Traits

@@ -1,0 +1,548 @@
+#%RAML 0.8
+title: Group API
+baseUri: https://api.covisintlabs.com/group/v1
+protocols: [HTTPS]
+  
+schemas:
+#common-schema
+  - group: |
+      {
+        "id" : "http://api.covisint.com/schema/group",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a group, a container of resources.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResource#"
+        },
+        "properties" : {            
+          "name" : {
+            "type" : "array",
+            "description": "Internationalized group name. Language code must be a valid 2-character ISO 639 language code.",
+            "required": true,
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "lang": { "type": "string", "maxLength": 10 },
+                "value": { "type": "string", "maxLength": 2000 }
+              }
+            }
+          },
+          "description" : {
+            "type" : "array",
+            "description": "Internationalized group description. Language code must be a valid 2-character ISO 639 language code.",
+            "required": true,
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "lang": { "type": "string", "maxLength": 10 },
+                "value": { "type": "string", "maxLength": 2000 }
+              }
+            }
+          },
+          "owner": {
+            "description": "The group owner.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#",
+            "required":true
+          },
+          "entitlements": {
+            "description": "The group's entitlements if any, returned in the response, depending upon the supplied media type. Group's entitlements cannot be created as part of group creation.",
+            "$ref": "http://api.covisint.com/schema/group.entitlements#",
+            "required": false
+          }
+        }
+      }
+
+  - group.entitlements: |
+      {
+        "id" : "http://api.covisint.com/schema/group.entitlements",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "description" : "Entitlements associated with the group.",
+        "type" : "array",
+        "items" :  { 
+          "$ref": "http://api.covisint.com/schema/group.entitlement#"
+        }
+      }
+      
+  - group.entitlement: |
+      {
+        "id" : "http://api.covisint.com/schema/group.entitlement",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "description" : "A single entitlement.",
+        "extends" : {
+          "$ref" : "http://api.covisint.com/schema/resource#"
+        },
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": "128",
+            "required": true
+          }
+        }
+      }
+      
+  - group.membership: |
+      {
+        "id" : "http://api.covisint.com/schema/group.membership",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "description" : "Member of a group.",
+        "extends" : {
+          "$ref" : "http://api.covisint.com/schema/resource#"
+        },
+        "properties" : {            
+          "member": { 
+            "description": "The resource that belongs to the group.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#",
+            "required":true
+          },
+          "anyOf": [
+            {
+              "group": {
+                "description": "A reference to the group that member belongs to.",
+                "$ref": "http://api.covisint.com/schema/resourceReference#",
+                "required":true
+              }
+            },
+            {
+              "group": {
+                "description": "The group that member belongs to.",
+                "$ref": "http://api.covisint.com/schema/group#",
+                "required":true
+              }
+            }
+          ]            
+        }
+      }        
+
+traits:
+#common-traits
+
+/groups:
+  is: [secured]
+  description: Collection endpoint for group resources
+  get:
+    is: [getResponse]
+    description: Search groups.
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.group.v1+json;includeEntitlements
+        type: string
+        required: true
+    queryParameters:
+      name: 
+        description: Retrieve only groups with the specified name.  The search is case-insensitve.  Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      description: 
+        description: Retrieve only groups with the specified description.  The search is case-insensitve.  Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false                 
+    responses:
+      200:
+        description: All groups that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.group.v1+json:
+            schema: group
+      400:
+        description: There was a problem with the client's request
+        # substatus codes and error messages are mentioned below:
+        # framework:request
+        # framework:request:io
+        # framework:request:io:read - 
+        # framework:request:io:read:parsing
+        # framework:request:io:write
+        # framework:request:header:missing - Missing request header: {headerName}
+        # framework:request:param:missing - Missing request parameter: {queryParameterName}
+        # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+        # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+            
+  post:
+    is: [postResponse]
+    description: Creates a new group. [Since 1.0]
+    headers:
+      Content-type:
+        description: Media type. [Since 1.1]
+        example: application/vnd.com.covisint.platform.group.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.group.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.group.v1+json:
+        schema: group 
+    responses:
+      201:
+        description: A new group was created and is returned in the body. [Since 1.1]
+        body:
+          application/vnd.com.covisint.platform.group.v1+json:
+            schema: group
+      400:
+        description: There was a problem with the client's request
+        # substatus codes and error messages are mentioned below:
+        # framework:request
+        # framework:request:io
+        # framework:request:io:read - 
+        # framework:request:io:read:parsing
+        # framework:request:io:write
+        # framework:request:header:missing - Missing request header: {headerName}
+        # framework:request:param:missing - Missing request parameter: {queryParameterName}
+        # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+        # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+        # framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+        # group.invalid.iso.language.code - The following language codes are invalid: {languageCode(s)}
+        # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+    
+  /{groupId}:
+    description: Endpoint for a specific group.
+    uriParameters:
+      groupId:
+        description: Unique identifier of the group
+        type: string
+        maxLength: 36
+        required: true
+    is: [secured]      
+    get:
+      is: [getResponse]
+      description: Returns the group by its unique id.
+      headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.v1+json;includeEntitlements
+            type: string
+            required: true
+      responses:
+        200:
+          description: The group was successfully retrieved.
+          body:
+            application/vnd.com.covisint.platform.group.v1+json:
+              schema: group
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+          body:
+            application/vnd.com.covisint.platform.group.v1+json;includeEntitlements:
+              schema: group
+                
+    put:
+      is: [putResponse]
+      description: Updates an existing group.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.group.v1+json
+          type: string
+          required: true
+        Content-type:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.group.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.group.v1+json:
+          schema: group
+      responses:
+        200:
+          description: The group was successfully updated.
+          body:
+            application/vnd.com.covisint.platform.group.v1+json:
+              schema: group
+              
+        400:
+          description: There was a problem with the client's request
+          # substatus codes and error messages are mentioned below:
+          # framework:request
+          # framework:request:io
+          # framework:request:io:read - 
+          # framework:request:io:read:parsing
+          # framework:request:io:write
+          # framework:request:header:missing - Missing request header: {headerName}
+          # framework:request:param:missing - Missing request parameter: {queryParameterName}
+          # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+          # group.invalid.iso.language.code - The following language codes are invalid: {languageCode(s)}
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    delete:
+      is: [deleteResponse]
+      description: Deletes a group.
+      headers:
+      responses:
+        204:
+          description: The group was successfully deleted.
+                          
+        400:
+          description: There was a problem with the client's request
+          # substatus codes are mentioned below:
+          # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+               
+    /entitlements:
+      is: [secured]
+      get:
+        is: [getResponse]
+        description: Returns the entitlements associated with the group.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.entitlement.v1+json
+            type: string
+            required: true
+        queryParameters:
+          id:
+            description: Retrieve only the group entitlement for the specified id, multiple parameters are supported.
+            type: string
+            required: false
+        responses:
+          200:
+            description: The entitlements were successfully retrieved.  This will be an empty array if no entitlements exist.
+            body:
+              application/vnd.com.covisint.platform.group.entitlement.v1+json:
+                schema: group.entitlements
+          400:
+            description: There was a problem with the client's request
+            # substatus codes are mentioned below:
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      post: 
+        is: [postResponse] 
+        description: Adds a new entitlement to this group.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.entitlement.v1+json
+            type: string
+            required: true
+          Content-type:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.entitlement.v1+json
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.group.entitlement.v1+json:
+            schema: group.entitlement
+        responses:
+          201: 
+            description: The entitlement was successfully created.
+            body:
+              application/vnd.com.covisint.platform.group.entitlement.v1+json:
+                schema: group.entitlement
+          400:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+            # framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /{groupEntitlementId}:
+        description: Endpoint for a specific group entitlement.
+        uriParameters:
+          groupEntitlementId:
+            description: Unique identifier of the group entitlements
+            type: string
+            maxLength: 36
+            required: true
+        is: [secured]         
+        get:
+          is: [getResponse]
+          description: Returns the entitlement by its unique id.
+          headers:
+            Accept:
+              description: Media type.
+              example: application/vnd.com.covisint.platform.group.entitlement.v1+json
+              type: string
+              required: true
+          responses:
+            200:
+              description: The group entitlement was successfully retrieved.
+              body:
+                application/vnd.com.covisint.platform.group.entitlement.v1+json:
+                  schema: group.entitlement
+                    
+            400:
+              description: There was a problem with the client's request
+              # substatus codes are mentioned below:
+              # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+                    
+        delete:
+          is: [deleteResponse]
+          description: Deletes a single group entitlement.
+          headers:
+          responses:
+            204:
+              description: The entitlement was successfully deleted.
+                              
+            400:
+              description: There was a problem with the client's request
+              # substatus codes are mentioned below:
+              # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]      
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+    /memberships:
+      is: [secured]
+      post:
+        is: [postResponse]
+        description: Creates a new group membership.
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.membership.v1+json
+            type: string
+            required: true
+          Content-type:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.membership.v1+json
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.group.membership.v1+json:
+            schema: group.membership
+        responses:
+          201:
+            description: A new group membership was created for the group and is returned in the body.
+            body:
+              application/vnd.com.covisint.platform.group.membership.v1+json:
+                schema: group.membership
+
+          400:
+            description: There was a problem with the client's request
+            # substatus codes and error messages are mentioned below:
+            # framework:request
+            # framework:request:io
+            # framework:request:io:read - 
+            # framework:request:io:read:parsing
+            # framework:request:io:write
+            # framework:request:header:missing - Missing request header: {headerName}
+            # framework:request:param:missing - Missing request parameter: {queryParameterName}
+            # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            # framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+            # framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+            # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+                
+      /{groupMembershipId}:
+        description: Endpoint for a specific membership in the group.
+        uriParameters:
+          groupMembershipId:
+            description: Unique identifier of the membership.
+            type: string
+            maxLength: 50
+            required: true          
+        is: [secured]            
+        get:
+          is: [getResponse]
+          description: Returns a group membership resource by its unique id.
+          headers:                  
+            Accept:
+              description: Media type.
+              example: application/vnd.com.covisint.platform.group.membership.v1+json;includeGroupAndEntitlements;includeGroup
+              type: string
+              required: true
+          responses:
+            200:
+              description: The group membership was successfully retrieved.
+              body:
+                application/vnd.com.covisint.platform.group.membership.v1+json:
+                    schema: group.membership  
+            400:
+              description: There was a problem with the client's request
+              # substatus codes are mentioned below:
+              # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application] 
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+        delete:
+          is: [deleteResponse]
+          description: Deletes a group membership from a group.
+          headers:                  
+          responses:
+            204:
+              description: The membership was successfully deleted.
+            400:
+              description: There was a problem with the client's request
+              # substatus codes are mentioned below:
+              # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]                    
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+/memberships:
+  is: [secured]     
+  get:
+    is: [getResponse]
+    description: Search for group memberships.
+    headers:                  
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.group.membership.v1+json;includeGroupAndEntitlements;includeGroup
+        type: string
+        required: true
+    queryParameters:
+      member.id: 
+        description: Retrieve only memberships having the supplied member id.  Multiple parameters are not supported.
+        type: string
+        required: true
+      member.type: 
+        description: Retrieve only memberships having the supplied member type. Multiple parameters are not supported.
+        type: string
+        required: true
+      group.owner.id:
+        description: Retrieve only memberships associated with group having the supplied owner id. Multiple parameters are not supported. 
+        type: string
+        required: false
+      group.owner.type:
+        description: Retrieve only memberships associated with group having the supplied owner type. Multiple parameters are not supported. 
+        type: string
+        required: false
+    responses:
+      200:
+        description: The memberships were successfully retrieved.  This may be an empty array.
+        body:
+          application/vnd.com.covisint.platform.group.memberships.v1+json;includeGroupAndEntitlements;includeGroup:
+            schema: group.membership                  
+      400:
+        description: There was a problem with the client's request
+        # substatus codes and error messages are mentioned below:
+        # framework:request
+        # framework:request:io
+        # framework:request:io:read - 
+        # framework:request:io:read:parsing
+        # framework:request:io:write
+        # framework:request:header:missing - Missing request header: {headerName}
+        # framework:request:param:missing - Missing request parameter: {queryParameterName}
+        # framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+        # framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are [person, application]
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
