@@ -328,6 +328,13 @@ module.exports = function (grunt) {
     'watch'
   ]);
 
+  grunt.registerTask('server', [
+    'jshint',
+    'concurrent:build',
+    'connect:livereload',
+    'watch'
+  ]);
+
   grunt.registerTask('build', [
     'jshint',
     'clean',
