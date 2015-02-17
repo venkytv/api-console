@@ -1,0 +1,395 @@
+#%RAML 0.8
+title: OAuth API
+baseUri: https://api.covisintlabs.com/oauth/v1
+protocols:
+- HTTPS
+securitySchemes:
+- basic:
+    type: Basic Authentication
+schemas:
+- resourceReference: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resourceReference\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"Schema representing links\",\n  \"type\" : \"object\",\n  \"properties\" :
+    {\n    \"id\" : {\n      \"type\" : \"string\",\n      \"maxLength\" : 36,\n      \"description\"
+    : \"The unique identifier for the resource.\",\n      \"required\": true\n    },\n
+    \   \"type\" : {\n      \"type\" : \"string\",\n      \"description\" : \"The
+    type of the resource.\"\n    },\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"description\" : \"The realm of the resource.\"\n    }\n  }\n}\n"
+- resource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resource\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"description\" : \"Core schema\",\n
+    \ \"definitions\" : {\n    \"resource\" : {\n      \"id\" : \"resource\",\n      \"type\"
+    : \"object\",\n      \"description\" : \"A basic resource.\",\n      \"properties\"
+    : {\n        \"id\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The unique identifier for this resource.\",\n
+    \         \"required\": true\n        },\n        \"version\": {\n          \"type\"
+    : \"number\",\n          \"minimum\" : 0,\n          \"maximum\" : 9223372036854775807,\n
+    \         \"description\" : \"The current version for this resource.  Exists once
+    the resource has been saved. This is mandatory for PUT requests, but should not
+    be supplied for POST requests.\",\n          \"required\": false\n        },\n
+    \       \"creator\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The creator of this resource. This is mandatory
+    if x-requestor header is NOT available\",\n          \"required\": false\n        },\n
+    \       \"creatorAppId\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The application id of the creator of this
+    resource.\",\n          \"required\": false\n        },\n        \"creation\"
+    : {\n          \"type\" : \"number\",\n          \"minimum\" : 0,\n          \"maximum\"
+    : 9223372036854775807,\n          \"description\" : \"If this value is provided
+    in a POST / PUT request body, it will be ignored and system will generate value
+    as time, in milliseconds since the epoch, when this resource was created or upda\",\n
+    \         \"required\": false            \n        }\n      }\n    }\n  }\n}\n"
+- realmScopedResource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/realmScopedResource\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Expands on the base resource and adds a realm attribute.\",\n
+    \ \"extends\" : {\n        \"$ref\" : \"http://api.covisint.com/schema/resource#\"\n
+    \ },\n  \"properties\" : {\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"maxLength\" : 16,\n      \"pattern\" : \"^[A-Za-z0-9]{2,25}$\",\n      \"description\"
+    : \"The realm in which this resource is being created. This is mandatory if x-realm
+    header is NOT available\",\n      \"required\": false\n    }\n  }\n}\n"
+- errorResponseSchema: ! "{\n  \"id\" : \"http://api.covisint.com/schema/errorResponseSchema\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Representation of an HTTP 4xx/5xx error response.\",\n  \"properties\"
+    : {\n    \"status\" : { \n      \"type\" : \"number\",\n      \"minimum\" : 400,\n
+    \     \"maximum\" : 599,\n      \"description\" : \"The HTTP status code.\",\n
+    \     \"required\": true\n    },\n    \"apiMessage\" : { \n      \"type\" : \"string\",\n
+    \     \"description\" : \"A helpful, human-readable description of the error,
+    useful for basic diagnostics.\" \n    },\n    \"apiStatusCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"The API-specific status code.\"\n    }\n\n
+    \ }\n}\n"
+- serviceCode: ! "{\n  \"id\" : \"http://api.covisint.com/schema/serviceCodes\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\": \"object\",\n
+    \ \"description\": \"The site/service/location codes granted along with a service.\",\n
+    \ \"properties\": {\n    \"code\": { \"type\": \"string\", \"required\": true,
+    \"maxLength\": 200, \"description\": \"The code value.\" },\n    \"codeKind\":
+    { \"type\": \"string\", \"required\": true, \"maxLength\": 36, \"description\":
+    \"The associated business unit.\" }\n  }\n}     \n"
+- serviceCodes: ! "{\n  \"type\" : \"array\",\n  \"description\" : \"The site/service/location
+    codes granted along with the service, if any.\",\n  \"items\" : { \"$ref\" : \"http://api.covisint.com/schema/serviceCode#\"},\n
+    \ \"required\": false\n}\n"
+- address: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/address\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"A container for the subject's address elements.\",\n  \"properties\" : {\n
+    \   \"type\" : \"string\",\n    \"streets\" : {\n        \"type\" : \"array\",\n
+    \       \"description\" : \"An array of address streets (i.e. address line 1,
+    2, 3).\",\n        \"minItems\" : 0,\n        \"items\" : {\n          \"type\":
+    \"string\",\n          \"maxLength\" : 255\n        }\n      },\n      \"city\"
+    : { \"type\" : \"string\", \"maxLength\" : 60, \"description\" : \"The city name.\"
+    },\n      \"state\" : { \"type\" : \"string\", \"maxLength\" : 60, \"description\"
+    : \"The state/province name or code.\" },\n      \"postal\" : { \"type\" : \"string\",
+    \"maxLength\" : 10, \"description\" : \"The postal or zip code.\" },\n      \"country\"
+    : { \"type\" : \"string\", \"minLength\" : 2, \"maxLength\" : 3, \"description\"
+    : \"The ISO country code. http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\"}\n
+    \ }\n}\n"
+- phone: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/phone\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n    \"description\"
+    : \"A container for phone number details.\",\n    \"properties\" : {\n      \"number\"
+    : { \"type\" : \"string\",\"maxLength\" : 100, \"description\" : \"The phone number.\"
+    },\n      \"type\" : { \"enum\" : [ \"main\", \"mobile\", \"fax\" ], \"description\"
+    : \"The phone number type.\" }\n    },\n    \"required\" : [ \"type\" ]\n}             \n"
+- subject: ! "{\n  \"id\" : \"http://api.covisint.com/schema/subject\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"Schema representing a subject.\",\n  \"extends\" : {\n        \"$ref\" : \"realmScopedResource\"\n
+    \ }\n}\n"
+- grantType: ! "{\n  \"id\" : \"http://api.covisint.com/schema/grantType\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"Schema representing a grant type.\",\n  \"extends\" : {\n        \"$ref\"
+    : \"http://api.covisint.com/schema/realmScopedResource#\"\n  },\n  \"properties\"
+    : {\n    \"type\": {\n      \"type\" : \"string\",\n      \"maxLength\": \"64\",\n
+    \     \"description\": \"Grant type value(client_credentials or certificate).\",\n
+    \     \"required\": true\n    },\n    \"subjectId\": {\n      \"type\" : \"string\",\n
+    \     \"maxLength\": \"64\",\n      \"description\": \"The subject.\",\n      \"required\":true\n
+    \   },\n    \"applicationId\": {\n      \"type\" : \"string\",\n      \"maxLength\":
+    \"64\",\n      \"description\": \"The application id of subject\",\n      \"required\":true\n
+    \   }\n  }\n}\n"
+- clientSecretGrantType: ! "{\n  \"id\" : \"http://api.covisint.com/schema/clientSecretGrantType\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing a client secret grant type.\",\n  \"extends\"
+    : {\n        \"$ref\" : \"http://api.covisint.com/schema/grantType#\"\n  },\n
+    \ \"properties\" : {\n    \"clientSecret\" : {\n      \"type\" : \"string\",\n
+    \     \"maxLength\": \"128\",\n      \"description\": \"Client secret.\",\n      \"required\":
+    true\n    }\n  }\n}\n"
+- certificateGrantType: ! "{\n  \"id\" : \"http://api.covisint.com/schema/certificateGrantType\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing a client secret grant type.\",\n  \"extends\"
+    : {\n        \"$ref\" : \"http://api.covisint.com/schema/grantType#\"\n  },\n
+    \ \"properties\" : {\n    \"publicKey\" : {\n      \"type\" : \"string\",\n      \"maxLength\":
+    \"2048\",\n      \"description\": \"Public key for the resource.\",\n      \"required\":
+    true\n    }\n  }\n}\n"
+- token: ! "{\n  \"id\" : \"http://api.covisint.com/schema/token\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"Schema representing a token for a subject grant type.\",\n  \"properties\"
+    : {\n       \"creation\" : {\n       \"description\": \"Epoch creation time, in
+    milliseconds.\",\n       \"required\": true\n    },\n    \"access_token\" : {\n
+    \     \"type\" : \"string\",\n      \"description\": \"Access token string.\",\n
+    \     \"required\": true\n    },\n    \"expires_in\" : {\n      \"type\" : \"string\",\n
+    \     \"description\": \"Access token lifetime, in seconds.\",\n      \"required\":
+    true\n    },\n    \"token_type\" : {\n      \"type\" : \"string\",\n      \"description\":
+    \"Access token type. Only bearer type is currently supported.\",\n      \"required\":
+    true\n    }\n  }\n}\n"
+traits:
+- secured:
+    usage: Apply this to any method that needs to be secured
+    description: Requests requires authentication using a bearer token.
+    headers:
+      Authorization:
+        description: Access token that is obtained from the /token endpoint of the
+          oauth API.
+        pattern: ^Bearer .*$
+        example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+        required: true
+    responses:
+      401:
+        description: Unauthenticated request.  This is returned if the access token
+          is missing, invalid, or expired.  Access tokens are obtained through the
+          /token endpoint of the Oauth API.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      403:
+        description: Unauthorized request.  The requestor is not authorized to perform
+          the requested operation.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- getResponse:
+    responses:
+      404: &6145720
+        description: The URI requested is invalid or the resource requested does not
+          exist.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      406: &6160960
+        description: Unable to produce content of specified 'Accept' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: &6159800
+        description: An unknown server error occurred
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- postResponse:
+    responses:
+      406: *6160960
+      415: &6157600
+        description: Unable to consume content of specified 'Content-Type' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: *6159800
+- deleteResponse:
+    responses:
+      404: *6145720
+      406: *6160960
+      500: *6159800
+- putResponse:
+    responses:
+      404: *6145720
+      406: *6160960
+      409:
+        description: There is a conflict in identifying the resource being acted on.  There
+          are two categories.  (1) The unique identifier in the URL and in the body
+          are different.  (2) The current version of the resource being updated and
+          the version sent in the body of the request. This may be an indication that
+          the resource has changed since the client loaded it. The conflict should
+          be resolved and the update resubmitted with the current version of the resource.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      415: *6157600
+      500: *6159800
+/subjects:
+  is:
+  - secured
+  description: Collection endpoint for subject resources
+  get:
+    is:
+    - getResponse
+    description: Return the entire collection of subjects. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.oauth.subject.v1+json
+        type: string
+        required: true
+    responses:
+      200:
+        description: The subject was successfully retrieved.
+        body:
+          application/vnd.com.covisint.platform.oauth.subject.v1+json:
+            schema: subject
+      400: &6171780
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      401: 
+  /{subjectId}:
+    description: The endpoint for a specific subject.
+    uriParameters:
+      subjectId:
+        description: The subject’s unique identifier. This is in the form of {resource-type}resource-id,
+          where resource type is either application or person.  These are the two
+          resource types that are supported for grants.  For example, {application}GdGi1nIQRQLFibYa2Wvrs2K2Z0tnsQfm
+          or {person}HEGYKW61.
+        type: string
+        maxLength: 64
+        required: true
+    is:
+    - secured
+    get:
+      is:
+      - getResponse
+      description: Returns the subjet by its unique id. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.oauth.subject.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The subject was successfully retrieved.
+          body:
+            application/vnd.com.covisint.platform.oauth.subject.v1+json:
+              schema: subject
+        400: *6171780
+        401: 
+    put:
+      is:
+      - putResponse
+      description: Creates or updates a subject resource.  This end point will create
+        new subject resource if it does not exist else will update the existing subject
+        resource. [Since:1.0]
+      headers:
+        Content-type:
+          description: Media type for subject.
+          example: application/vnd.com.covisint.platform.oauth.subject.v1+json
+          type: string
+          required: true
+        Accept:
+          description: Media type for subject.
+          example: application/vnd.com.covisint.platform.oauth.subject.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.oauth.subject.v1+json:
+          schema: subject
+      responses:
+        200:
+          description: The subject was successfully created/updated.
+          body:
+            application/vnd.com.covisint.platform.oauth.subject.v1+json:
+              schema: subject
+        400: *6171780
+        401: 
+    delete:
+      is:
+      - deleteResponse
+      description: Deletes a subject and associated grants. [Since:1.0]
+      headers: 
+      responses:
+        204:
+          description: The subject and associated grants were successfully deleted.
+        400: *6171780
+        401: 
+    /grants:
+      is:
+      - secured
+      get:
+        is:
+        - getResponse
+        description: Returns the grants by subject id. [Since:1.0]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.oauth.client.secret.grant.v1+json
+            type: string
+            required: true
+          type:
+            description: Subject grant type. The current valid value is "client_credentials".
+            example: client_credentials
+            type: string
+            required: true
+        responses:
+          200:
+            description: The grant type was successfully retrieved.
+            body:
+              application/vnd.com.covisint.platform.oauth.client.secret.grant.v1+json:
+                schema: clientSecretGrantType
+          400:
+            description: There was a problem with the client's request
+          401: 
+      post:
+        is:
+        - postResponse
+        description: Creates a new subject grant. [Since:1.0]
+        headers:
+          Content-type:
+            description: Media type for subject grant.
+            example: application/vnd.com.covisint.platform.oauth.client.secret.grant.v1+json
+            type: string
+            required: true
+          Accept:
+            description: Media type for subject grant.
+            example: application/vnd.com.covisint.platform.oauth.client.secret.grant.v1+json
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.oauth.client.secret.grant.v1+json:
+            schema: clientSecretGrantType
+            example: ! '{"applicationId":"GdGi1nIQRQLFibYa2Wvrs2K2Z0tnsQf"}
+
+'
+        responses:
+          201:
+            description: A new grant was created and is returned in the body.
+            body:
+              application/vnd.com.covisint.platform.oauth.client.secret.grant.v1+json:
+                schema: clientSecretGrantType
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+          401: 
+      /{grantId}:
+        description: Endpoint for a specific grant for a subject.
+        uriParameters:
+          grantId:
+            description: The grant’s unique identifier.
+            type: string
+            maxLength: 64
+            required: true
+        is:
+        - secured
+        get:
+          is:
+          - getResponse
+          description: Returns a subject grant resource by its unique id. [Since:1.0]
+          headers:
+            Accept:
+              description: Media type.
+              example: application/vnd.com.covisint.platform.oauth.client.secret.grant.v1+json
+              type: string
+              required: true
+          responses:
+            200:
+              description: The grant for a subject was successfully retrieved.
+              body:
+                application/vnd.com.covisint.platform.oauth.client.secret.grant.v1+json:
+                  schema: clientSecretGrantType
+            400:
+              description: There was a problem with the client's request
+            401: 
+        delete:
+          is:
+          - deleteResponse
+          description: Deletes a subject grant type. [Since:1.0]
+          headers: 
+          responses:
+            204:
+              description: The grant for a subject was successfully deleted.
+            400:
+              description: There was a problem with the client's request
+            401: 

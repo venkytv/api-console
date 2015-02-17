@@ -1,0 +1,568 @@
+#%RAML 0.8
+title: Group API
+baseUri: https://api.covisintlabs.com/group/v1
+protocols:
+- HTTPS
+schemas:
+- resourceReference: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resourceReference\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"Schema representing links\",\n  \"type\" : \"object\",\n  \"properties\" :
+    {\n    \"id\" : {\n      \"type\" : \"string\",\n      \"maxLength\" : 36,\n      \"description\"
+    : \"The unique identifier for the resource.\",\n      \"required\": true\n    },\n
+    \   \"type\" : {\n      \"type\" : \"string\",\n      \"description\" : \"The
+    type of the resource.\"\n    },\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"description\" : \"The realm of the resource.\"\n    }\n  }\n}\n"
+- resource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resource\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"description\" : \"Core schema\",\n
+    \ \"definitions\" : {\n    \"resource\" : {\n      \"id\" : \"resource\",\n      \"type\"
+    : \"object\",\n      \"description\" : \"A basic resource.\",\n      \"properties\"
+    : {\n        \"id\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The unique identifier for this resource.\",\n
+    \         \"required\": true\n        },\n        \"version\": {\n          \"type\"
+    : \"number\",\n          \"minimum\" : 0,\n          \"maximum\" : 9223372036854775807,\n
+    \         \"description\" : \"The current version for this resource.  Exists once
+    the resource has been saved. This is mandatory for PUT requests, but should not
+    be supplied for POST requests.\",\n          \"required\": false\n        },\n
+    \       \"creator\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The creator of this resource. This is mandatory
+    if x-requestor header is NOT available\",\n          \"required\": false\n        },\n
+    \       \"creatorAppId\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The application id of the creator of this
+    resource.\",\n          \"required\": false\n        },\n        \"creation\"
+    : {\n          \"type\" : \"number\",\n          \"minimum\" : 0,\n          \"maximum\"
+    : 9223372036854775807,\n          \"description\" : \"If this value is provided
+    in a POST / PUT request body, it will be ignored and system will generate value
+    as time, in milliseconds since the epoch, when this resource was created or upda\",\n
+    \         \"required\": false            \n        }\n      }\n    }\n  }\n}\n"
+- realmScopedResource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/realmScopedResource\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Expands on the base resource and adds a realm attribute.\",\n
+    \ \"extends\" : {\n        \"$ref\" : \"http://api.covisint.com/schema/resource#\"\n
+    \ },\n  \"properties\" : {\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"maxLength\" : 16,\n      \"pattern\" : \"^[A-Za-z0-9]{2,25}$\",\n      \"description\"
+    : \"The realm in which this resource is being created. This is mandatory if x-realm
+    header is NOT available\",\n      \"required\": false\n    }\n  }\n}\n"
+- errorResponseSchema: ! "{\n  \"id\" : \"http://api.covisint.com/schema/errorResponseSchema\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Representation of an HTTP 4xx/5xx error response.\",\n  \"properties\"
+    : {\n    \"status\" : { \n      \"type\" : \"number\",\n      \"minimum\" : 400,\n
+    \     \"maximum\" : 599,\n      \"description\" : \"The HTTP status code.\",\n
+    \     \"required\": true\n    },\n    \"apiMessage\" : { \n      \"type\" : \"string\",\n
+    \     \"description\" : \"A helpful, human-readable description of the error,
+    useful for basic diagnostics.\" \n    },\n    \"apiStatusCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"The API-specific status code.\"\n    }\n\n
+    \ }\n}\n"
+- serviceCode: ! "{\n  \"id\" : \"http://api.covisint.com/schema/serviceCodes\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\": \"object\",\n
+    \ \"description\": \"The site/service/location codes granted along with a service.\",\n
+    \ \"properties\": {\n    \"code\": { \"type\": \"string\", \"required\": true,
+    \"maxLength\": 200, \"description\": \"The code value.\" },\n    \"codeKind\":
+    { \"type\": \"string\", \"required\": true, \"maxLength\": 36, \"description\":
+    \"The associated business unit.\" }\n  }\n}     \n"
+- serviceCodes: ! "{\n  \"type\" : \"array\",\n  \"description\" : \"The site/service/location
+    codes granted along with the service, if any.\",\n  \"items\" : { \"$ref\" : \"http://api.covisint.com/schema/serviceCode#\"},\n
+    \ \"required\": false\n}\n"
+- address: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/address\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"A container for the subject's address elements.\",\n  \"properties\" : {\n
+    \   \"type\" : \"string\",\n    \"streets\" : {\n        \"type\" : \"array\",\n
+    \       \"description\" : \"An array of address streets (i.e. address line 1,
+    2, 3).\",\n        \"minItems\" : 0,\n        \"items\" : {\n          \"type\":
+    \"string\",\n          \"maxLength\" : 255\n        }\n      },\n      \"city\"
+    : { \"type\" : \"string\", \"maxLength\" : 60, \"description\" : \"The city name.\"
+    },\n      \"state\" : { \"type\" : \"string\", \"maxLength\" : 60, \"description\"
+    : \"The state/province name or code.\" },\n      \"postal\" : { \"type\" : \"string\",
+    \"maxLength\" : 10, \"description\" : \"The postal or zip code.\" },\n      \"country\"
+    : { \"type\" : \"string\", \"minLength\" : 2, \"maxLength\" : 3, \"description\"
+    : \"The ISO country code. http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\"}\n
+    \ }\n}\n"
+- phone: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/phone\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n    \"description\"
+    : \"A container for phone number details.\",\n    \"properties\" : {\n      \"number\"
+    : { \"type\" : \"string\",\"maxLength\" : 100, \"description\" : \"The phone number.\"
+    },\n      \"type\" : { \"enum\" : [ \"main\", \"mobile\", \"fax\" ], \"description\"
+    : \"The phone number type.\" }\n    },\n    \"required\" : [ \"type\" ]\n}             \n"
+- group: ! "{\n  \"id\" : \"http://api.covisint.com/schema/group\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"Schema representing a group, a container of resources.\",\n  \"extends\" :
+    {\n        \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {            \n    \"name\" : {\n      \"type\" : \"array\",\n
+    \     \"description\": \"Internationalized group name. Language code must be a
+    valid 2-character ISO 639 language code.\",\n      \"required\": true,\n      \"minItems\":
+    1,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\":
+    {\n          \"lang\": { \"type\": \"string\", \"maxLength\": 10 },\n          \"value\":
+    { \"type\": \"string\", \"maxLength\": 2000 }\n        }\n      }\n    },\n    \"description\"
+    : {\n      \"type\" : \"array\",\n      \"description\": \"Internationalized group
+    description. Language code must be a valid 2-character ISO 639 language code.\",\n
+    \     \"required\": true,\n      \"minItems\": 1,\n      \"items\": {\n        \"type\":
+    \"object\",\n        \"properties\": {\n          \"lang\": { \"type\": \"string\",
+    \"maxLength\": 10 },\n          \"value\": { \"type\": \"string\", \"maxLength\":
+    2000 }\n        }\n      }\n    },\n    \"owner\": {\n      \"description\": \"The
+    group owner.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\":true\n    },\n    \"entitlements\": {\n      \"description\":
+    \"The group's entitlements if any, returned in the response, depending upon the
+    supplied media type. Group's entitlements cannot be created as part of group creation.\",\n
+    \     \"$ref\": \"http://api.covisint.com/schema/group.entitlements#\",\n      \"required\":
+    false\n    }\n  }\n}\n"
+- group.entitlements: ! "{\n  \"id\" : \"http://api.covisint.com/schema/group.entitlements\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"Entitlements associated with the group.\",\n  \"type\" : \"array\",\n  \"items\"
+    :  { \n    \"$ref\": \"http://api.covisint.com/schema/group.entitlement#\"\n  }\n}\n"
+- group.entitlement: ! "{\n  \"id\" : \"http://api.covisint.com/schema/group.entitlement\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"A single entitlement.\",\n  \"extends\" : {\n    \"$ref\" : \"http://api.covisint.com/schema/resource#\"\n
+    \ },\n  \"properties\": {\n    \"name\": {\n      \"type\": \"string\",\n      \"maxLength\":
+    \"128\",\n      \"required\": true\n    }\n  }\n}\n"
+- group.membership: ! "{\n  \"id\" : \"http://api.covisint.com/schema/group.membership\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"Member of a group.\",\n  \"extends\" : {\n    \"$ref\" : \"http://api.covisint.com/schema/resource#\"\n
+    \ },\n  \"properties\" : {            \n    \"member\": { \n      \"description\":
+    \"The resource that belongs to the group.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\":true\n    },\n    \"anyOf\": [\n      {\n        \"group\":
+    {\n          \"description\": \"A reference to the group that member belongs to.\",\n
+    \         \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n          \"required\":true\n
+    \       }\n      },\n      {\n        \"group\": {\n          \"description\":
+    \"The group that member belongs to.\",\n          \"$ref\": \"http://api.covisint.com/schema/group#\",\n
+    \         \"required\":true\n        }\n      }\n    ]            \n  }\n}        \n"
+traits:
+- secured:
+    usage: Apply this to any method that needs to be secured
+    description: Requests requires authentication using a bearer token.
+    headers:
+      Authorization:
+        description: Access token that is obtained from the /token endpoint of the
+          oauth API.
+        pattern: ^Bearer .*$
+        example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+        required: true
+    responses:
+      401:
+        description: Unauthenticated request.  This is returned if the access token
+          is missing, invalid, or expired.  Access tokens are obtained through the
+          /token endpoint of the Oauth API.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      403:
+        description: Unauthorized request.  The requestor is not authorized to perform
+          the requested operation.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- getResponse:
+    responses:
+      404: &6170900
+        description: The URI requested is invalid or the resource requested does not
+          exist.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      406: &6183940
+        description: Unable to produce content of specified 'Accept' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: &6181780
+        description: An unknown server error occurred
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- postResponse:
+    responses:
+      406: *6183940
+      415: &6179600
+        description: Unable to consume content of specified 'Content-Type' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: *6181780
+- deleteResponse:
+    responses:
+      404: *6170900
+      406: *6183940
+      500: *6181780
+- putResponse:
+    responses:
+      404: *6170900
+      406: *6183940
+      409:
+        description: There is a conflict in identifying the resource being acted on.  There
+          are two categories.  (1) The unique identifier in the URL and in the body
+          are different.  (2) The current version of the resource being updated and
+          the version sent in the body of the request. This may be an indication that
+          the resource has changed since the client loaded it. The conflict should
+          be resolved and the update resubmitted with the current version of the resource.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      415: *6179600
+      500: *6181780
+/groups:
+  is:
+  - secured
+  description: Collection endpoint for group resources [Since:1.0]
+  get:
+    is:
+    - getResponse
+    description: Search groups.
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.group.v1+json;includeEntitlements
+        type: string
+        required: true
+    queryParameters:
+      name:
+        description: Retrieve only groups with the specified name.  The search is
+          case-insensitve.  Multiple parameters are supported and the search results
+          will be a union.
+        type: string
+        required: false
+      description:
+        description: Retrieve only groups with the specified description.  The search
+          is case-insensitve.  Multiple parameters are supported and the search results
+          will be a union.
+        type: string
+        required: false
+    responses:
+      200:
+        description: All groups that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.group.v1+json:
+            schema: group
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is:
+    - postResponse
+    description: Creates a new group.
+    headers:
+      Content-type:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.group.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.group.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.group.v1+json:
+        schema: group
+    responses:
+      201:
+        description: A new group was created and is returned in the body.
+        body:
+          application/vnd.com.covisint.platform.group.v1+json:
+            schema: group
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{groupId}:
+    description: Endpoint for a specific group.
+    uriParameters:
+      groupId:
+        description: Unique identifier of the group
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    get:
+      is:
+      - getResponse
+      description: Returns the group by its unique id. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.group.v1+json;includeEntitlements
+          type: string
+          required: true
+      responses:
+        200:
+          description: The group was successfully retrieved.
+          body:
+            application/vnd.com.covisint.platform.group.v1+json:
+              schema: group
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.platform.group.v1+json;includeEntitlements:
+              schema: group
+    put:
+      is:
+      - putResponse
+      description: Updates an existing group. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.group.v1+json
+          type: string
+          required: true
+        Content-type:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.group.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.group.v1+json:
+          schema: group
+      responses:
+        200:
+          description: The group was successfully updated.
+          body:
+            application/vnd.com.covisint.platform.group.v1+json:
+              schema: group
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    delete:
+      is:
+      - deleteResponse
+      description: Deletes a group. [Since:100.0]
+      headers: 
+      responses:
+        204:
+          description: The group was successfully deleted.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    /entitlements:
+      is:
+      - secured
+      get:
+        is:
+        - getResponse
+        description: Returns the entitlements associated with the group. [Since:1.0]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.entitlement.v1+json
+            type: string
+            required: true
+        queryParameters:
+          id:
+            description: Retrieve only the group entitlement for the specified id,
+              multiple parameters are supported.
+            type: string
+            required: false
+        responses:
+          200:
+            description: The entitlements were successfully retrieved.  This will
+              be an empty array if no entitlements exist.
+            body:
+              application/vnd.com.covisint.platform.group.entitlement.v1+json:
+                schema: group.entitlements
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      post:
+        is:
+        - postResponse
+        description: Adds a new entitlement to this group. [Since:1.0]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.entitlement.v1+json
+            type: string
+            required: true
+          Content-type:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.entitlement.v1+json
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.group.entitlement.v1+json:
+            schema: group.entitlement
+        responses:
+          201:
+            description: The entitlement was successfully created.
+            body:
+              application/vnd.com.covisint.platform.group.entitlement.v1+json:
+                schema: group.entitlement
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /{groupEntitlementId}:
+        description: Endpoint for a specific group entitlement.
+        uriParameters:
+          groupEntitlementId:
+            description: Unique identifier of the group entitlements
+            type: string
+            maxLength: 36
+            required: true
+        is:
+        - secured
+        get:
+          is:
+          - getResponse
+          description: Returns the entitlement by its unique id. [Since:100.0]
+          headers:
+            Accept:
+              description: Media type.
+              example: application/vnd.com.covisint.platform.group.entitlement.v1+json
+              type: string
+              required: true
+          responses:
+            200:
+              description: The group entitlement was successfully retrieved.
+              body:
+                application/vnd.com.covisint.platform.group.entitlement.v1+json:
+                  schema: group.entitlement
+            400:
+              description: There was a problem with the client's request
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+        delete:
+          is:
+          - deleteResponse
+          description: Deletes a single group entitlement. [Since:1.0]
+          headers: 
+          responses:
+            204:
+              description: The entitlement was successfully deleted.
+            400:
+              description: There was a problem with the client's request
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+    /memberships:
+      is:
+      - secured
+      post:
+        is:
+        - postResponse
+        description: Creates a new group membership. [Since:1.0]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.membership.v1+json
+            type: string
+            required: true
+          Content-type:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.group.membership.v1+json
+            type: string
+            required: true
+        body:
+          application/vnd.com.covisint.platform.group.membership.v1+json:
+            schema: group.membership
+        responses:
+          201:
+            description: A new group membership was created for the group and is returned
+              in the body.
+            body:
+              application/vnd.com.covisint.platform.group.membership.v1+json:
+                schema: group.membership
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /{groupMembershipId}:
+        description: Endpoint for a specific membership in the group.
+        uriParameters:
+          groupMembershipId:
+            description: Unique identifier of the membership.
+            type: string
+            maxLength: 50
+            required: true
+        is:
+        - secured
+        get:
+          is:
+          - getResponse
+          description: Returns a group membership resource by its unique id. [Since:1.0]
+          headers:
+            Accept:
+              description: Media type.
+              example: application/vnd.com.covisint.platform.group.membership.v1+json;includeGroupAndEntitlements;includeGroup
+              type: string
+              required: true
+          responses:
+            200:
+              description: The group membership was successfully retrieved.
+              body:
+                application/vnd.com.covisint.platform.group.membership.v1+json:
+                  schema: group.membership
+            400:
+              description: There was a problem with the client's request
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+        delete:
+          is:
+          - deleteResponse
+          description: Deletes a group membership from a group. [Since:1.0]
+          headers: 
+          responses:
+            204:
+              description: The membership was successfully deleted.
+            400:
+              description: There was a problem with the client's request
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+/memberships:
+  description: Endpoint for a specific membership in the group. [Since:1.0]
+  is:
+  - secured
+  get:
+    is:
+    - getResponse
+    description: Search for group memberships.
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.group.membership.v1+json;includeGroupAndEntitlements;includeGroup
+        type: string
+        required: true
+    queryParameters:
+      member.id:
+        description: Retrieve only memberships having the supplied member id.  Multiple
+          parameters are not supported.
+        type: string
+        required: true
+      member.type:
+        description: Retrieve only memberships having the supplied member type. Multiple
+          parameters are not supported.
+        type: string
+        required: true
+      group.owner.id:
+        description: Retrieve only memberships associated with group having the supplied
+          owner id. Multiple parameters are not supported.
+        type: string
+        required: false
+      group.owner.type:
+        description: Retrieve only memberships associated with group having the supplied
+          owner type. Multiple parameters are not supported.
+        type: string
+        required: false
+    responses:
+      200:
+        description: The memberships were successfully retrieved.  This may be an
+          empty array.
+        body:
+          application/vnd.com.covisint.platform.group.memberships.v1+json;includeGroupAndEntitlements;includeGroup:
+            schema: group.membership
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema

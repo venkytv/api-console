@@ -3246,7 +3246,7 @@ a.raml-console-resource-path-active {
 }
 
 .raml-console-sidebar-input-reset:before {
-  content: "Γå¬";
+  content: "↪";
   display: block;
   -webkit-transform: rotate(-180deg);
 }

@@ -1,0 +1,215 @@
+#%RAML 0.8
+title: IDM Roles
+baseUri: https://api.covisintlabs.com/idm/v2
+protocols:
+- HTTPS
+schemas:
+- errorResponseSchema: ! "{\n  \"id\" : \"http://api.covisint.com/schema/errorResponseSchema\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Representation of an HTTP 4xx/5xx error response.\",\n  \"properties\"
+    : {\n    \"status\" : { \n      \"type\" : \"number\",\n      \"minimum\" : 400,\n
+    \     \"maximum\" : 599,\n      \"description\" : \"The HTTP status code.\",\n
+    \     \"required\": true\n    },\n    \"apiMessage\" : { \n      \"type\" : \"string\",\n
+    \     \"description\" : \"A helpful, human-readable description of the error,
+    useful for basic diagnostics.\" \n    },\n    \"apiStatusCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"The API-specific status code.\"\n    }\n\n
+    \ }\n}\n"
+traits:
+- secured:
+    usage: Apply this to any method that needs to be secured
+    description: Requests requires authentication using a bearer token.
+    headers:
+      Authorization:
+        description: Access token that is obtained from the /token endpoint of the
+          oauth API.
+        pattern: ^Bearer .*$
+        example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+        required: true
+    responses:
+      401:
+        description: Unauthenticated request.  This is returned if the access token
+          is missing, invalid, or expired.  Access tokens are obtained through the
+          /token endpoint of the Oauth API.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      403:
+        description: Unauthorized request.  The requestor is not authorized to perform
+          the requested operation.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- getResponse:
+    responses:
+      404: &8701620
+        description: The URI requested is invalid or the resource requested does not
+          exist.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: &8700700
+        description: An unknown server error occurred
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- postResponse:
+    responses:
+      500: *8700700
+- deleteResponse:
+    responses:
+      404: *8701620
+      500: *8700700
+- putResponse:
+    responses:
+      404: *8701620
+      500: *8700700
+/roles:
+  is:
+  - secured
+  description: Collection endpoint for role resources
+  get:
+    is:
+    - getResponse
+    description: ! '## Search Roles
+
+      * Existing roles can be retrieved via query parameters.
+
+      * To retrieve roles, the client sends a GET requests to the Resource endpoint;
+      e.g., /Roles.
+
+      * If the idpUserID is passed as input then the admin grantable roles for that
+      user will be returned.
+
+      * If the idpUserID were not passed as input then the admin manageable roles
+      will be returned.
+
+      * If the roles exist, the service responds with a status code of 200 and includes
+      the result in the body of the response.
+
+'
+    headers: 
+    queryParameters:
+      idpUserID:
+        description: The IDP User ID (login ID) of the user.  See above description
+          for more information.
+        type: string
+        maxLength: 
+        required: false
+    responses:
+      200:
+        description: All services that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/json: 
+      400:
+        description: There was a problem with the client's request
+  /{roleId}:
+    uriParameters:
+      roleId:
+        description: The unique identifier of the role.
+        type: string
+        maxLength: 255
+        required: true
+    is:
+    - secured
+    description: A specific role.
+    get:
+      is:
+      - getResponse
+      description: ! "## Get a single role\nIf the role exists, the service responds
+        with a status code of 200 and includes the single role in the body of the
+        response. \n"
+      headers: 
+      queryParameters: 
+      responses:
+        200:
+          description: All services that satisfy the query parameters were successfully
+            retrieved (response collection may be empty).
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"statusCode\":\"200\",\n    \"subStatusCode\":\"\",\n
+                \   \"roles\":[\n      {\n        \"roleID\":\"1\",\n        \"name\":\"Super
+                User\",\n        \"externalRoleID\":\"SUPER_USERS\",\n        \"privileges\":[\n
+                \         {\n            \"privilegeID\":\"100001\",\n            \"name\":\"Super
+                User\"\n          }\n        ]\n      },\n      {\n        \"roleID\":\"2\",\n
+                \       \"name\":\"Application Admin\",\n        \"externalRoleID\":\"APP_ADMIN\",\n
+                \       \"privileges\":[\n          {\n            \"privilegeID\":\"100002\",\n
+                \           \"name\":\"App Admin\"\n          }\n        ]\n      }\n
+                \   ]\n  }\n}                \n"
+        400:
+          description: There was a problem with the client's request
+/users/{userId}/roles:
+  uriParameters:
+    userId:
+      description: The IDP User ID of the user.
+      type: string
+      maxLength: 8
+      required: true
+  is:
+  - secured
+  description: Collection endpoint for role resources
+  get:
+    is:
+    - getResponse
+    description: ! '## Retrieve User Roles
+
+      If the user exists, the service responds with a status code of 200 and includes
+      the result in the body of the response.
+
+'
+    headers: 
+    queryParameters: 
+    responses:
+      200:
+        description: All services that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{  \n    \"statusCode\":\"200\",\n    \"subStatusCode\":\"\",\n
+              \   \"roles\":[\n      {\n        \"roleID\":\"1\",\n        \"name\":\"Super
+              User\",\n        \"externalRoleID\":\"SUPER_USERS\",\n        \"privileges\":[\n
+              \         {\n            \"privilegeID\":\"100001\",\n            \"name\":\"Super
+              User\"\n          }\n        ]\n      },\n      {\n        \"roleID\":\"2\",\n
+              \       \"name\":\"Application Admin\",\n        \"externalRoleID\":\"APP_ADMIN\",\n
+              \       \"privileges\":[\n          {\n            \"privilegeID\":\"100002\",\n
+              \           \"name\":\"App Admin\"\n          }\n        ]\n      }\n
+              \   ]\n  }\n}\n"
+      400:
+        description: There was a problem with the client's request
+  /{roleId}:
+    uriParameters:
+      roleId:
+        description: The unique identifier of the role.
+        type: string
+        maxLength: 255
+        required: true
+    is:
+    - secured
+    description: A user's role.
+    put:
+      is:
+      - putResponse
+      description: ! '## Remove User Role
+
+        An existing user can have a role removed/revoked using a PUT request.
+
+        If the user exists, the service responds with a status code of 200 and includes
+        the result in the body of the response.
+
+'
+      headers: 
+      queryParameters:
+        status:
+          description: Set as DELETE to remove the role.
+          type: string
+          maxLength: 
+          required: true
+          example: DELETE
+      responses:
+        200:
+          description: All services that satisfy the query parameters were successfully
+            retrieved (response collection may be empty).
+          body:
+            application/json: 
+        400:
+          description: There was a problem with the client's request

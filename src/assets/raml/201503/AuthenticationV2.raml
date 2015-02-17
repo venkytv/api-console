@@ -1,0 +1,490 @@
+#%RAML 0.8
+title: Authentication API
+baseUri: https://api.covisintlabs.com/authn/v2
+protocols:
+- HTTPS
+schemas:
+- resourceReference: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resourceReference\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"Schema representing links\",\n  \"type\" : \"object\",\n  \"properties\" :
+    {\n    \"id\" : {\n      \"type\" : \"string\",\n      \"maxLength\" : 36,\n      \"description\"
+    : \"The unique identifier for the resource.\",\n      \"required\": true\n    },\n
+    \   \"type\" : {\n      \"type\" : \"string\",\n      \"description\" : \"The
+    type of the resource.\"\n    },\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"description\" : \"The realm of the resource.\"\n    }\n  }\n}\n"
+- resource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resource\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"description\" : \"Core schema\",\n
+    \ \"definitions\" : {\n    \"resource\" : {\n      \"id\" : \"resource\",\n      \"type\"
+    : \"object\",\n      \"description\" : \"A basic resource.\",\n      \"properties\"
+    : {\n        \"id\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The unique identifier for this resource.\",\n
+    \         \"required\": true\n        },\n        \"version\": {\n          \"type\"
+    : \"number\",\n          \"minimum\" : 0,\n          \"maximum\" : 9223372036854775807,\n
+    \         \"description\" : \"The current version for this resource.  Exists once
+    the resource has been saved. This is mandatory for PUT requests, but should not
+    be supplied for POST requests.\",\n          \"required\": false\n        },\n
+    \       \"creator\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The creator of this resource. This is mandatory
+    if x-requestor header is NOT available\",\n          \"required\": false\n        },\n
+    \       \"creatorAppId\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The application id of the creator of this
+    resource.\",\n          \"required\": false\n        },\n        \"creation\"
+    : {\n          \"type\" : \"number\",\n          \"minimum\" : 0,\n          \"maximum\"
+    : 9223372036854775807,\n          \"description\" : \"If this value is provided
+    in a POST / PUT request body, it will be ignored and system will generate value
+    as time, in milliseconds since the epoch, when this resource was created or upda\",\n
+    \         \"required\": false            \n        }\n      }\n    }\n  }\n}\n"
+- realmScopedResource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/realmScopedResource\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Expands on the base resource and adds a realm attribute.\",\n
+    \ \"extends\" : {\n        \"$ref\" : \"http://api.covisint.com/schema/resource#\"\n
+    \ },\n  \"properties\" : {\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"maxLength\" : 16,\n      \"pattern\" : \"^[A-Za-z0-9]{2,25}$\",\n      \"description\"
+    : \"The realm in which this resource is being created. This is mandatory if x-realm
+    header is NOT available\",\n      \"required\": false\n    }\n  }\n}\n"
+- errorResponseSchema: ! "{\n  \"id\" : \"http://api.covisint.com/schema/errorResponseSchema\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Representation of an HTTP 4xx/5xx error response.\",\n  \"properties\"
+    : {\n    \"status\" : { \n      \"type\" : \"number\",\n      \"minimum\" : 400,\n
+    \     \"maximum\" : 599,\n      \"description\" : \"The HTTP status code.\",\n
+    \     \"required\": true\n    },\n    \"apiMessage\" : { \n      \"type\" : \"string\",\n
+    \     \"description\" : \"A helpful, human-readable description of the error,
+    useful for basic diagnostics.\" \n    },\n    \"apiStatusCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"The API-specific status code.\"\n    }\n\n
+    \ }\n}\n"
+- serviceCode: ! "{\n  \"id\" : \"http://api.covisint.com/schema/serviceCodes\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\": \"object\",\n
+    \ \"description\": \"The site/service/location codes granted along with a service.\",\n
+    \ \"properties\": {\n    \"code\": { \"type\": \"string\", \"required\": true,
+    \"maxLength\": 200, \"description\": \"The code value.\" },\n    \"codeKind\":
+    { \"type\": \"string\", \"required\": true, \"maxLength\": 36, \"description\":
+    \"The associated business unit.\" }\n  }\n}     \n"
+- serviceCodes: ! "{\n  \"type\" : \"array\",\n  \"description\" : \"The site/service/location
+    codes granted along with the service, if any.\",\n  \"items\" : { \"$ref\" : \"http://api.covisint.com/schema/serviceCode#\"},\n
+    \ \"required\": false\n}\n"
+- address: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/address\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"A container for the subject's address elements.\",\n  \"properties\" : {\n
+    \   \"type\" : \"string\",\n    \"streets\" : {\n        \"type\" : \"array\",\n
+    \       \"description\" : \"An array of address streets (i.e. address line 1,
+    2, 3).\",\n        \"minItems\" : 0,\n        \"items\" : {\n          \"type\":
+    \"string\",\n          \"maxLength\" : 255\n        }\n      },\n      \"city\"
+    : { \"type\" : \"string\", \"maxLength\" : 60, \"description\" : \"The city name.\"
+    },\n      \"state\" : { \"type\" : \"string\", \"maxLength\" : 60, \"description\"
+    : \"The state/province name or code.\" },\n      \"postal\" : { \"type\" : \"string\",
+    \"maxLength\" : 10, \"description\" : \"The postal or zip code.\" },\n      \"country\"
+    : { \"type\" : \"string\", \"minLength\" : 2, \"maxLength\" : 3, \"description\"
+    : \"The ISO country code. http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\"}\n
+    \ }\n}\n"
+- phone: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/phone\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n    \"description\"
+    : \"A container for phone number details.\",\n    \"properties\" : {\n      \"number\"
+    : { \"type\" : \"string\",\"maxLength\" : 100, \"description\" : \"The phone number.\"
+    },\n      \"type\" : { \"enum\" : [ \"main\", \"mobile\", \"fax\" ], \"description\"
+    : \"The phone number type.\" }\n    },\n    \"required\" : [ \"type\" ]\n}             \n"
+- securityQuestions: ! "{\n  \"id\" : \"http://api.covisint.com/schema/securityQuestions/v1\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"array\",\n
+    \ \"description\": \"Collection of security questions.\",\n  \"items\": {\n    \"description\":
+    \"The security questions.\",\n    \"$ref\": \"http://api.covisint.com/schema/securityQuestion/v1\",\n
+    \   \"required\": true\n  }\n}\n"
+- securityQuestion: ! "{\n  \"id\" : \"http://api.covisint.com/schema/securityQuestion/v1\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"A representation of a security question.\",\n  \"extends\"
+    : {\n    \"$ref\" : \"http://api.covisint.com/idm/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"version\": {\n      \"description\" : \"The
+    current version for this resource.  Exists once the resource has been saved. This
+    is mandatory for PUT requests, but should not be supplied for POST requests. User
+    supplied value will be ignored and will be set to the creation value.\"\n    },\n
+    \   \"owner\": {\n      \"description\": \"The owner of this security question.
+    Required only when creating or updating the person scoped question.\",\n      \"$ref\":
+    \"http://api.covisint.com/schema/resourceReference#\",\n      \"required\": false\n
+    \   },\n    \"question\" : {\n      \"type\" : \"array\",\n      \"description\":
+    \"Internationalized security question text.\",\n      \"required\": true,\n      \"minItems\":
+    0,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\":
+    {\n          \"lang\": { \"type\": \"string\", \"required\": true, \"maxLength\":
+    10 },\n          \"text\": { \"type\": \"string\", \"required\": true, \"maxLength\":
+    2000 }\n        }\n      }\n    }\n  }\n}\n      \n"
+- securityQuestionAccount: ! "{\n  \"id\" : \"http://api.covisint.com/schema/securityQuestionAccount/v1\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"A representation of a security question account.\",\n  \"extends\"
+    : {\n    \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"version\": {\n      \"description\" : \"The
+    current version for this resource.  Exists once the resource has been saved. This
+    is mandatory for PUT requests, but should not be supplied for POST requests. User
+    supplied value will be ignored and will be set to the creation value.\"\n    },\n
+    \   \"questions\": {\n      \"type\" : \"array\",\n      \"description\": \"The
+    security questions chosen for this particular account.\",\n      \"required\":
+    true,\n      \"minItems\": 0,\n      \"items\": {\n        \"type\": \"object\",\n
+    \       \"properties\": {\n          \"question\": {\n            \"description\":
+    \"The selected question.\",\n            \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \           \"required\": true\n          },\n          \"answer\" : {\n            \"type\"
+    : \"string\",\n            \"maxLength\" : 255,\n            \"description\" :
+    \"The actual answer text, in the supplier's preferred locale.  Required only when
+    creating or updating the security question account.\",\n            \"required\":
+    false\n          },\n          \"index\" : {\n            \"type\" : \"number\",\n
+    \           \"description\" : \"The logical order in which this question is to
+    be viewed with respect to other questions used by this account. If provided, should
+    be for all questions in a sequence starting with 1.\",\n            \"minValue\"
+    : 1,\n            \"required\": false\n          }\n        }\n      }\n    }\n
+    \ }\n}   \n"
+- authenticationRequest: ! "{\n \"id\" : \"http://api.covisint.com/schema/authenticationRequest\",\n
+    \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n \"type\" : \"object\",\n
+    \"description\" : \"Schema representing a authentication request resource.\",\n
+    \"properties\" : {\n   \"instant\" : { \n     \"type\" : \"number\", \n     \"description\"
+    : \"The time, in milliseconds since the epoch, when the authentication request
+    is being made.\"\n   },\n   \"subject\": {\n     \"type\": \"string\",\n     \"description\":
+    \"The subject for which this request is being made. It is the unique identifier
+    for the person.\",\n     \"required\": true\n   },\n   \"password\": {\n     \"type\":
+    \"string\",\n     \"description\": \"The password for the subject to validate.\",\n
+    \    \"required\": true\n   },\n   \"service\": {\n     \"type\": \"string\",\n
+    \    \"description\": \"The caller service description for the request.\"\n   },\n
+    \  \"subjectInet\": {\n     \"type\": \"string\",\n     \"description\": \"The
+    IP address of the caller service.\",\n     \"required\": true\n  }\n }\n}\n      \n"
+- authenticationResponse: ! "{\n  \"id\" : \"http://api.covisint.com/schema/authenticationResponse\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing a authentication response resource.\",\n
+    \ \"properties\" : {\n    \"instant\" : { \n      \"type\" : \"number\", \n      \"description\"
+    : \"The time, in milliseconds since the epoch, when the authentication request
+    is being made.\"\n    },\n    \"result\" : { \n      \"type\" : \"string\",\n
+    \     \"enum\" : [ \"SUCCESS\", \"UNKNOWN_SUBJECT\", \"BAD_PASSWORD\",\"LOCKED\",\"EXPIRED\",\"ERROR\"
+    ],\n      \"description\" : \"The status of the authentication request.\"\n    },\n
+    \   \"request\": {\n      \"type\" : \"object\",\n      \"description\": \"The
+    authentication request reference.\",\n      \"$ref\": \"http://api.covisint.com/idm/schema/authenticationRequest#\"\n
+    \   }\n  }\n}\n"
+- authenticationRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/authenticationRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \   \"description\" : \"A container for authentication rule\",\n    \"properties\"
+    : {\n      \"type\" : { \"enum\" : [ \"PasswordLockout\"], \"description\" : \"The
+    authentication rule type.\" }\n    },\n    \"required\" : [ \"type\" ]\n} \n"
+- passwordLockoutRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/passwordLockoutRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \   \"description\" : \"History rule for password policy\",\n    \"extends\" :
+    {\"$ref\" : \"http://api.covisint.com/schema/authenticationRule#\"\n      },\n
+    \   \"properties\" : {\n      \"failures\" : {\"type\" : \"number\",\"description\"
+    : \"The number of failures that can occur, with the failure lockout period, before
+    a password credential is locked.\", \"required\": false, \"default\":3\n      },\n
+    \     \"failureWindow\" : {\"type\" : \"number\",\"description\" : \"The amount
+    of time, in minutes, within which a set number of failures must occur for a password
+    credential to be locked\", \"required\": false, \"default\":5\n      },\n      \"lockoutWindow\"
+    : {\"type\" : \"number\",\"description\" : \"The amount of time, in minutes, before
+    a password that was locked due to too many failed authentication attempts is automatically
+    unlocked.\", \"required\": false, \"default\":15\n      }\n    }\n}       \n"
+- authenticationPolicy: ! "{\n  \"id\" : \"http://api.covisint.com/schema/authenticationPolicy\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing an authentication policy resource.\",\n
+    \ \"extends\" : {\n        \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"status\" : { \n      \"type\" : \"string\",\n
+    \     \"enum\" : [ \"active\", \"inactive\", \"deleted\" ],\n      \"description\"
+    : \"The status of the authentication policy.\",\n      \"required\": true\n    },\n
+    \   \"name\" : {\n      \"type\" : \"string\",\n      \"description\": \"The name
+    of authentication Policy.\",\n      \"required\": true\n    },\n    \"desc\":
+    {\n      \"type\" : \"string\",\n      \"description\": \"The description for
+    authentication Policy.\"\n    },                                  \n     \"rules\"
+    : {\n       \"type\" : \"array\",\n       \"description\" : \"Authentication Policy
+    Rules\",\n       \"minItems\" : 1,\n       \"items\" : { \"$ref\" : \"http://api.covisint.com/idm/schema/authenticationRule#\"
+    },\n       \"required\": true\n    }\n  }\n}\n"
+- passwordRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/passwordRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \   \"description\" : \"A container for password rule\",\n    \"properties\" :
+    {\n      \"type\" : { \"enum\" : [ \"history\", \"lifetime\", \"character_class\",
+    \"disallowed_words\", \"disallowed_characters\", \"length\"], \"description\"
+    : \"The password rule type.\" }\n    },\n    \"required\" : [ \"type\" ]\n} \n"
+- historyRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/historyRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \   \"description\" : \"History rule for password policy\",\n    \"extends\" :
+    {\"$ref\" : \"http://api.covisint.com/schema/passwordRule#\"\n      },\n    \"properties\"
+    : {\n      \"numberOfPasswords\" : {\"type\" : \"number\",\"description\" : \"History
+    for passwords to maintain\", \"required\": true\n      }\n    }\n}\n"
+- lifetimeRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/lifetimeRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \   \"description\" : \"Lifetime rule for password policy\",\n    \"extends\"
+    : {\"$ref\" : \"http://api.covisint.com/schema/passwordRule#\"\n      },\n    \"properties\"
+    : {\n      \"minPasswordLifetime\" : {\"type\" : \"number\",\"description\" :
+    \"The minimum amount of time, in days, that must pass between password changes.\",
+    \"required\": true\n      },\n      \"maxPasswordLifetime\" : {\"type\" : \"number\",\"description\"
+    : \"The maximum time, in days, that a password can exist before it is changed\",
+    \"required\": true\n      }\n    }\n} \n"
+- characterClassRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/characterClassRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \   \"description\" : \"Character class rule for password policy\",\n    \"extends\"
+    : {\"$ref\" : \"http://api.covisint.com/schema/passwordRule#\"\n      },\n    \"properties\"
+    : {\n      \"allowUpperChars\" : {\"type\" : \"boolean\",\"description\" : \"If
+    password policy allows uppercase chars.\", \"required\": true\n      },\n      \"allowLowerChars\"
+    : {\"type\" : \"boolean\",\"description\" : \"If password policy allows lowercase
+    chars.\", \"required\": true\n      },\n      \"allowNumChars\" : {\"type\" :
+    \"boolean\",\"description\" : \"If password policy allows numbers.\", \"required\":
+    true\n      },\n      \"allowSpecialChars\" : {\"type\" : \"boolean\",\"description\"
+    : \"If password policy allows special chars.\", \"required\": true\n      },\n
+    \     \"requiredNumberOfCharClasses\" : {\"type\" : \"boolean\",\"description\"
+    : \"If password policy requires numbers.\", \"required\": true\n      }\n    }\n}\n"
+- disallowedWordsRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/disallowedWordsRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"extends\" : {\"$ref\"
+    : \"http://api.covisint.com/schema/passwordRule#\"\n      },\n  \"type\" : \"object\",\n
+    \   \"description\" : \"Disallowed words rule for password policy\",\n    \"properties\"
+    : {\n      \"wordListId\" : {\"type\" : \"number\",\"description\" : \"Unique
+    identifier of the disallowed word list\", \"required\": true\n      }\n    }\n}\n"
+- disallowedCharsRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/disallowedCharsRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"extends\" : {\"$ref\"
+    : \"http://api.covisint.com/schema/passwordRule#\"\n      },\n  \"type\" : \"object\",\n
+    \   \"description\" : \"Disallowed chars rule for password policy\",\n    \"properties\"
+    : {\n      \"disallowedChars\" : {\"type\" : \"string\",\"description\" : \"Disallowed
+    characters in the password\", \"required\": true\n      }\n    }\n}\n"
+- lengthRule: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/lengthRule\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"extends\" : {\"$ref\"
+    : \"http://api.covisint.com/schema/passwordRule#\"\n      },\n  \"type\" : \"object\",\n
+    \   \"description\" : \"Length rule for password policy\",\n    \"properties\"
+    : {\n      \"min\" : {\"type\" : \"number\",\"description\" : \"Minimum length
+    of the password alowed.\", \"required\": true\n      },\n      \"max\" : {\"type\"
+    : \"number\",\"description\" : \"Maximum length of the password alowed.\", \"required\":
+    true\n      }\n    }\n}\n"
+- passwordPolicy: ! "{\n  \"id\" : \"http://api.covisint.com/schema/passwordPolicy\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing an password policy resource.\",\n  \"extends\"
+    : {\n    \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"status\" : { \n      \"type\" : \"string\",\n
+    \     \"enum\" : [ \"active\", \"inactive\", \"deleted\" ],\n      \"description\"
+    : \"The status of the password policy.\",\n      \"required\": true\n    },\n
+    \   \"name\" : {\n      \"type\" : \"string\",\n      \"description\": \"The name
+    of password Policy.\",\n      \"required\": true\n    },\n    \"desc\": {\n      \"type\"
+    : \"string\",\n      \"description\": \"The description for password Policy.\"\n
+    \   },                                  \n    \"rules\" : {\n       \"type\" :
+    \"array\",\n       \"description\" : \"Password Policy Rules\",\n       \"minItems\"
+    : 0,\n       \"items\" : { \"$ref\" : \"http://api.covisint.com/idm/schema/passwordRule#\"
+    },\n       \"required\": false\n    }\n  }\n}\n"
+- password: ! "{\n  \"id\" : \"http://api.covisint.com/schema/password\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"Schema representing an password resource.\",\n  \"extends\" : {\n    \"$ref\"
+    : \"http://api.covisint.com/idm/schema/realmScopedResource#\"\n  },\n  \"properties\"
+    : {\n    \"subject\": { \n      \"description\": \"The subject for which this
+    password resource belongs to.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    },\n    \"password\": {\n      \"type\" : \"string\",\n
+    \     \"description\": \"The password string for the subject.\",\n      \"required\":
+    true\n    },\n    \"passwordPolicyId\" : { \n      \"type\" : \"string\", \n      \"description\"
+    : \"The unique identifier for the password policy governing the password.\",\n
+    \     \"required\": true\n    },\n    \"authenticationPolicyId\" : { \n      \"type\"
+    : \"string\", \n      \"description\" : \"The unique identifier for the authentication
+    policy governing the password.\",\n      \"required\": true\n    },\n    \"expiration\"
+    : { \n      \"type\" : \"number\", \n      \"description\" : \"The time, in milliseconds
+    since the epoch, when the password expires.\"\n    },\n    \"locked\" : {\n      \"type\"
+    : \"boolean\",\n      \"description\" : \"Whether or not the password is locked.\"\n
+    \   },\n    \"unlockInstant\" : { \n      \"type\" : \"number\", \n      \"description\"
+    : \"The time, in milliseconds since the epoch, when the password will be unlocked.\"\n
+    \   }\n  }\n}\n"
+- passwordValidation: ! "{\n  \"id\" : \"http://api.covisint.com/schema/passwordValidation\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing an password validation.\",\n  \"properties\"
+    : {\n    \"name\" : {\n      \"type\" : \"array\",\n      \"description\": \"Represents
+    password validation response.\",\n      \"required\": true,\n      \"minItems\":
+    1,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\":
+    {\n          \"type\": { \"type\": \"string\" },\n          \"description\": {
+    \"type\": \"string\", \"maxLength\": 2000 },\n          \"passed\": { \"type\":
+    \"boolean\", \"required\": true }\n        }\n      }\n    }\n  }\n}\n"
+- pin: ! "{\n  \"id\" : \"http://api.covisint.com/schema/pin\",\n  \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n
+    \ \"type\" : \"object\",\n  \"description\" : \"Schema representing an pin resource.\",\n
+    \ \"extends\" : {\n    \"$ref\" : \"http://api.covisint.com/idm/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"pin\": { \n      \"type\" : \"string\",\n      \"description\":
+    \"The pin string for pin resource.\",\n      \"required\": true\n    }\n  }\n}\n
+    \   \n"
+traits:
+- secured:
+    usage: Apply this to any method that needs to be secured
+    description: Requests requires authentication using a bearer token.
+    headers:
+      Authorization:
+        description: Access token that is obtained from the /token endpoint of the
+          oauth API.
+        pattern: ^Bearer .*$
+        example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+        required: true
+    responses:
+      401:
+        description: Unauthenticated request.  This is returned if the access token
+          is missing, invalid, or expired.  Access tokens are obtained through the
+          /token endpoint of the Oauth API.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      403:
+        description: Unauthorized request.  The requestor is not authorized to perform
+          the requested operation.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- getResponse:
+    responses:
+      404: &6815160
+        description: The URI requested is invalid or the resource requested does not
+          exist.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      406: &6814420
+        description: Unable to produce content of specified 'Accept' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: &6813720
+        description: An unknown server error occurred
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- postResponse:
+    responses:
+      406: *6814420
+      415: &6812040
+        description: Unable to consume content of specified 'Content-Type' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: *6813720
+- deleteResponse:
+    responses:
+      404: *6815160
+      406: *6814420
+      500: *6813720
+- putResponse:
+    responses:
+      404: *6815160
+      406: *6814420
+      409:
+        description: There is a conflict in identifying the resource being acted on.  There
+          are two categories.  (1) The unique identifier in the URL and in the body
+          are different.  (2) The current version of the resource being updated and
+          the version sent in the body of the request. This may be an indication that
+          the resource has changed since the client loaded it. The conflict should
+          be resolved and the update resubmitted with the current version of the resource.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      415: *6812040
+      500: *6813720
+/persons/{personId}/accounts:
+  description: Endpoint for a person's accounts. [Since:2.0]
+  is:
+  - secured
+  uriParameters:
+    personId:
+      description: The unique id of the person.
+      type: string
+      required: true
+  /securityQuestion:
+    is:
+    - secured
+    get:
+      is:
+      - getResponse
+      description: Returns the person's chosen security questions
+      headers:
+        Accept:
+          description: Media type for a person security question account.
+          type: string
+          required: true
+      responses:
+        200:
+          description: The person's chosen security questions were successfully retrieved.
+          body:
+            application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+              schema: securityQuestionAccount
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    put:
+      is:
+      - putResponse
+      description: Updates a person's security questions account (creates one if it
+        doesn't exist).
+      headers:
+        Content-type:
+          description: Media type for a person security question account.
+          example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
+          type: string
+          required: true
+        Accept:
+          description: Media type for a person security question account.
+          example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+          schema: securityQuestionAccount
+      responses:
+        200:
+          description: The person's security question account was updated successfully
+            (or created if it didn't already exist).
+          body:
+            application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+              schema: securityQuestionAccount
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+/securityQuestions:
+  description: Endpoint for security questions used to verify a person's identity.  [Since:2.0]
+  get:
+    is:
+    - getResponse
+    description: Search for security questions.
+    headers:
+      Accept:
+        description: Media type for a security question resource.
+        example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+        type: string
+        required: true
+    queryParameters:
+      owner.id:
+        description: Filter on the id of the resource owning the question. For example,
+          the person id or organization id.  This query parameter is only required
+          if ownerType is specified.
+        type: string
+        required: false
+      owner.type:
+        description: Filter on the type of the resource owning the question.  For
+          example, person or organization.  This query paramer is only required if
+          ownerId is specified.
+        type: string
+        required: false
+    responses:
+      200:
+        description: All matching security questions were successfully retrieved.
+        body:
+          application/vnd.com.covisint.platform.securityquestion.v1+json:
+            schema: securityQuestions
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{id}:
+    put:
+      description: Updates person scoped question, creating it when it doesn't exist.
+        Also clears the person scoped question if empty question array is supplied.
+        In all the scenarios, the person scoped answer gets erased.
+      headers:
+        Content-type:
+          description: Media type for a person security question account.
+          example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+          type: string
+          required: true
+        Accept:
+          description: Media type for a person security question account.
+          example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.securityquestion.v1+json:
+          schema: securityQuestion
+      responses:
+        200:
+          description: The person scoped question was updated successfully (or created
+            if it didn't already exist).
+          body:
+            application/vnd.com.covisint.platform.securityquestion.v1+json:
+              schema: securityQuestion
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
