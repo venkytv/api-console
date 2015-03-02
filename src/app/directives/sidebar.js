@@ -83,8 +83,8 @@
           // If the response fails because of CORS, responseText is null
           var editorHeight = 50;
 
-          if (jqXhr.responseText) {
-            var lines = jqXhr.responseText.split('\n').length;
+          if ($scope.response.body) {
+            var lines = $scope.response.body.split('\n').length;
             editorHeight = lines > 100 ? 2000 : 25*lines;
           }
 
