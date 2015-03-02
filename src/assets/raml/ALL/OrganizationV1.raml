@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: Organization API
-baseUri: https://api.covisintlabs.com/organization/v1
+baseUri: https://api.covisintrnd.com/organization/v1
 protocols:
 - HTTPS
 schemas:
@@ -156,40 +156,40 @@ traits:
             schema: errorResponseSchema
 - getResponse:
     responses:
-      404: &6154180
+      404: &16892280
         description: The URI requested is invalid or the resource requested does not
           exist.
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      406: &6147360
+      406: &17406280
         description: Unable to produce content of specified 'Accept' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: &6138540
+      500: &17405640
         description: An unknown server error occurred
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
 - postResponse:
     responses:
-      406: *6147360
-      415: &6145240
+      406: *17406280
+      415: &17404500
         description: Unable to consume content of specified 'Content-Type' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: *6138540
+      500: *17405640
 - deleteResponse:
     responses:
-      404: *6154180
-      406: *6147360
-      500: *6138540
+      404: *16892280
+      406: *17406280
+      500: *17405640
 - putResponse:
     responses:
-      404: *6154180
-      406: *6147360
+      404: *16892280
+      406: *17406280
       409:
         description: There is a conflict in identifying the resource being acted on.  There
           are two categories.  (1) The unique identifier in the URL and in the body
@@ -200,8 +200,24 @@ traits:
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      415: *6145240
-      500: *6138540
+      415: *17404500
+      500: *17405640
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
 /organizations:
   is:
   - secured

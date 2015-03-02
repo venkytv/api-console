@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: OAuth API
-baseUri: https://api.covisintlabs.com/oauth/v1
+baseUri: https://api.covisintrnd.com/oauth/v1
 protocols:
 - HTTPS
 securitySchemes:
@@ -152,40 +152,40 @@ traits:
             schema: errorResponseSchema
 - getResponse:
     responses:
-      404: &9042820
+      404: &17739600
         description: The URI requested is invalid or the resource requested does not
           exist.
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      406: &9038660
+      406: &17738500
         description: Unable to produce content of specified 'Accept' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: &9037380
+      500: &17737160
         description: An unknown server error occurred
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
 - postResponse:
     responses:
-      406: *9038660
-      415: &9035140
+      406: *17738500
+      415: &17734980
         description: Unable to consume content of specified 'Content-Type' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: *9037380
+      500: *17737160
 - deleteResponse:
     responses:
-      404: *9042820
-      406: *9038660
-      500: *9037380
+      404: *17739600
+      406: *17738500
+      500: *17737160
 - putResponse:
     responses:
-      404: *9042820
-      406: *9038660
+      404: *17739600
+      406: *17738500
       409:
         description: There is a conflict in identifying the resource being acted on.  There
           are two categories.  (1) The unique identifier in the URL and in the body
@@ -196,8 +196,24 @@ traits:
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      415: *9035140
-      500: *9037380
+      415: *17734980
+      500: *17737160
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
 /subjects:
   is:
   - secured
@@ -218,7 +234,7 @@ traits:
         body:
           application/vnd.com.covisint.platform.oauth.subject.v1+json:
             schema: subject
-      400: &9000160
+      400: &17229720
         description: There was a problem with the client's request
         body:
           application/vnd.com.covisint.error.v1+json:
@@ -253,7 +269,7 @@ traits:
           body:
             application/vnd.com.covisint.platform.oauth.subject.v1+json:
               schema: subject
-        400: *9000160
+        400: *17229720
         401: 
     put:
       is:
@@ -281,7 +297,7 @@ traits:
           body:
             application/vnd.com.covisint.platform.oauth.subject.v1+json:
               schema: subject
-        400: *9000160
+        400: *17229720
         401: 
     delete:
       is:
@@ -291,7 +307,7 @@ traits:
       responses:
         204:
           description: The subject and associated grants were successfully deleted.
-        400: *9000160
+        400: *17229720
         401: 
     /grants:
       is:

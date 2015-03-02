@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: Service API
-baseUri: https://api.covisintlabs.com/service/v1
+baseUri: https://api.covisintrnd.com/service/v1
 protocols:
 - HTTPS
 schemas:
@@ -168,30 +168,30 @@ schemas:
     saved. This is mandatory for PUT requests, but should not be supplied for POST
     requests. User supplied value will be ignored and will be set to the creation
     value.\"\n    },\n    \"owningOrganization\": {\n      \"description\": \"The
-    organization that owns this package.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n
-    \   },\n    \"parent\": {\n      \"description\": \"The parent package.  Used
-    to create a package hierarchy.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n
+    organization that owns this package.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    },\n    \"parent\": {\n      \"description\": \"The
+    parent package.  Used to create a package hierarchy.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n
     \   },\n    \"termsAndConditions\": {\n      \"type\": \"array\",\n      \"minItems\":
     1,\n      \"items\": {\n      \"type\": \"object\",\n        \"properties\": {\n
     \         \"type\": { \n            \"type\": \"string\", \n            \"enum\":
     [ \"person\", \"organization\" ],\n            \"description\": \"The target entity
     of the terms and conditions.\"\n          },\n          \"tacId\": {\n            \"type\":
     \"string\", \n            \"description\": \"The identifier of the T&C record.\",\n
-    \           \"required\": true,\n            \"maxLength\": 36\n          }\n
-    \       }\n      }\n    },\n    \"protected\": {\n      \"type\": \"boolean\",\n
-    \     \"description\": \"Indicates whether this package is synced back to cleartrust
-    entitlements server, and therefore protected by the ct web agent.\"\n    },\n
-    \   \"requestable\": {\n      \"type\": \"boolean\",\n      \"description\": \"Indicates
-    whether this package may be requested by persons or organizations.\"\n    },\n
-    \   \"grantable\": {\n      \"type\": \"boolean\",\n      \"description\": \"Indicates
-    whether this package may be granted to persons or organizations.\"\n    },                                    \n
-    \   \"displayable\": {\n      \"type\": \"boolean\",\n      \"description\": \"Indicates
-    whether this package may be displayed or should be suppressed in UIs.\"\n    },
-    \                                   \n    \"requestReasonRequired\": {\n      \"type\":
-    \"boolean\",\n      \"description\": \"Indicates whether package requests must
-    be accompanied by a reason supplied by the requestor.\"\n    },                                    \n
-    \   \"name\" : {\n      \"type\" : \"array\",\n      \"description\": \"Internationalized
-    package names.\",\n      \"required\": true,\n      \"minItems\": 1,\n      \"items\":
+    \           \"maxLength\": 36\n          }\n        }\n      }\n    },\n    \"protected\":
+    {\n      \"type\": \"boolean\",\n      \"description\": \"Indicates whether this
+    package is synced back to cleartrust entitlements server, and therefore protected
+    by the ct web agent.\"\n    },\n    \"requestable\": {\n      \"type\": \"boolean\",\n
+    \     \"description\": \"Indicates whether this package may be requested by persons
+    or organizations.\"\n    },\n    \"grantable\": {\n      \"type\": \"boolean\",\n
+    \     \"description\": \"Indicates whether this package may be granted to persons
+    or organizations.\"\n    },                                    \n    \"displayable\":
+    {\n      \"type\": \"boolean\",\n      \"description\": \"Indicates whether this
+    package may be displayed or should be suppressed in UIs.\"\n    },                                    \n
+    \   \"requestReasonRequired\": {\n      \"type\": \"boolean\",\n      \"description\":
+    \"Indicates whether package requests must be accompanied by a reason supplied
+    by the requestor.\"\n    },                                    \n    \"name\"
+    : {\n      \"type\" : \"array\",\n      \"description\": \"Internationalized package
+    names.\",\n      \"required\": true,\n      \"minItems\": 1,\n      \"items\":
     {\n        \"type\": \"object\",\n        \"properties\": {\n          \"lang\":
     { \"type\": \"string\", \"maxLength\": 10 },\n          \"text\": { \"type\":
     \"string\", \"maxLength\": 2000 }\n        }\n      }\n    },\n    \"description\"
@@ -204,11 +204,11 @@ schemas:
     names.\",\n      \"minItems\": 1,\n      \"items\": {\n        \"type\": \"object\",\n
     \       \"properties\": {\n          \"lang\": { \"type\": \"string\", \"maxLength\":
     10 },\n          \"text\": { \"type\": \"string\", \"maxLength\": 2000 }\n        }\n
-    \     }\n    },\n    \"requiredApprovals\" : {\n      \"type\" : \"array\",\n
-    \     \"description\": \"List of approval actors required to make decisions on
-    package requests before it can be granted.\",\n      \"minItems\": 0,\n      \"items\":
-    {\n        \"enum\" : [ \"organizationAdmin\", \"applicationAdmin\", \"provisioningAdmin\"
-    ]\n      }\n    }\n  }\n}\n\n  \n"
+    \     },\n      \"required\": true\n    },\n    \"requiredApprovals\" : {\n      \"type\"
+    : \"array\",\n      \"description\": \"List of approval actors required to make
+    decisions on package requests before it can be granted.\",\n      \"minItems\":
+    0,\n      \"items\": {\n        \"enum\" : [ \"organizationAdmin\", \"applicationAdmin\",
+    \"provisioningAdmin\" ]\n      }\n    }\n  }\n}\n\n  \n"
 traits:
 - secured:
     usage: Apply this to any method that needs to be secured
@@ -236,40 +236,40 @@ traits:
             schema: errorResponseSchema
 - getResponse:
     responses:
-      404: &7138660
+      404: &16532440
         description: The URI requested is invalid or the resource requested does not
           exist.
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      406: &7136860
+      406: &16529480
         description: Unable to produce content of specified 'Accept' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: &7135240
+      500: &16526720
         description: An unknown server error occurred
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
 - postResponse:
     responses:
-      406: *7136860
-      415: &7150400
+      406: *16529480
+      415: &16541280
         description: Unable to consume content of specified 'Content-Type' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: *7135240
+      500: *16526720
 - deleteResponse:
     responses:
-      404: *7138660
-      406: *7136860
-      500: *7135240
+      404: *16532440
+      406: *16529480
+      500: *16526720
 - putResponse:
     responses:
-      404: *7138660
-      406: *7136860
+      404: *16532440
+      406: *16529480
       409:
         description: There is a conflict in identifying the resource being acted on.  There
           are two categories.  (1) The unique identifier in the URL and in the body
@@ -280,8 +280,24 @@ traits:
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      415: *7150400
-      500: *7135240
+      415: *16541280
+      500: *16526720
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
 /services:
   is:
   - secured
@@ -289,11 +305,11 @@ traits:
   get:
     is:
     - getResponse
-    description: Performs a search for service resources.[Since:1.0]
+    description: Performs a search for service resources. [Since:1.0]
     headers:
       Accept:
         description: Media type.
-        example: application/vnd.com.covisint.platform.service.v1+json.
+        example: application/vnd.com.covisint.platform.service.v1+json
         type: string
         required: true
     queryParameters:
@@ -367,6 +383,35 @@ traits:
             schema: service
       400:
         description: There was a problem with the client's request
+  post:
+    is:
+    - postResponse
+    description: Creates a new service. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.service.v1+json
+        type: string
+        required: true
+      Content-type:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.service.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.service.v1+json:
+        schema: service
+    responses:
+      201:
+        description: The service was successfully created
+        body:
+          application/vnd.com.covisint.platform.service.v1+json:
+            schema: service
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
   /{id}:
     uriParameters:
       id:
@@ -380,11 +425,11 @@ traits:
     get:
       is:
       - getResponse
-      description: Returns the service by its unique id.[Since:1.0]
+      description: Returns the service by its unique id. [Since:1.0]
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.service.v1+json.
+          example: application/vnd.com.covisint.platform.service.v1+json
           type: string
           required: true
       responses:
@@ -395,35 +440,6 @@ traits:
               schema: service
         400:
           description: There was a problem with the client's request
-    post:
-      is:
-      - postResponse
-      description: Creates a new service.[Since:1.0]
-      headers:
-        Accept:
-          description: Media type.
-          example: application/vnd.com.covisint.platform.service.v1+json.
-          type: string
-          required: true
-        Content-type:
-          description: Media type.
-          example: application/vnd.com.covisint.platform.service.v1+json.
-          type: string
-          required: true
-      body:
-        application/vnd.com.covisint.platform.service.v1+json:
-          schema: service
-      responses:
-        201:
-          description: The service was successfully created
-          body:
-            application/vnd.com.covisint.platform.service.v1+json:
-              schema: service
-        400:
-          description: There was a problem with the client's request
-          body:
-            application/vnd.com.covisint.error.v1+json:
-              schema: errorResponseSchema
 /packages:
   is:
   - secured
@@ -435,7 +451,7 @@ traits:
     headers:
       Accept:
         description: Media type.
-        example: application/vnd.com.covisint.platform.package.v1+json.
+        example: application/vnd.com.covisint.platform.package.v1+json
         type: string
         required: true
     queryParameters:
@@ -474,6 +490,14 @@ traits:
         type: string
         maxLength: 36
         required: false
+      grantable:
+        description: Return all packages that are flagged as grantable.
+        type: boolean
+        required: false
+      requestable:
+        description: Return all packages that are flagged as requestable.
+        type: boolean
+        required: false
       sortBy:
         description: Sort the search results according to creation timestamp property.
         type: string
@@ -489,6 +513,35 @@ traits:
             schema: package
       400:
         description: There was a problem with the client's request
+  post:
+    is:
+    - postResponse
+    description: Creates a new package. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+      Content-type:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.package.v1+json:
+        schema: package
+    responses:
+      201:
+        description: The package was successfully created
+        body:
+          application/vnd.com.covisint.platform.package.v1+json:
+            schema: package
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
   /{packageId}:
     description: individual resource endpoint for packages.
     uriParameters:
@@ -506,7 +559,7 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.package.v1+json.
+          example: application/vnd.com.covisint.platform.package.v1+json
           type: string
           required: true
       responses:
@@ -517,35 +570,6 @@ traits:
               schema: package
         400:
           description: There was a problem with the client's request
-    post:
-      is:
-      - postResponse
-      description: Creates a new package. [Since:1.0]
-      headers:
-        Accept:
-          description: Media type.
-          example: application/vnd.com.covisint.platform.package.v1+json.
-          type: string
-          required: true
-        Content-type:
-          description: Media type.
-          example: application/vnd.com.covisint.platform.package.v1+json.
-          type: string
-          required: true
-      body:
-        application/vnd.com.covisint.platform.package.v1+json:
-          schema: package
-      responses:
-        201:
-          description: The package was successfully created
-          body:
-            application/vnd.com.covisint.platform.package.v1+json:
-              schema: package
-        400:
-          description: There was a problem with the client's request
-          body:
-            application/vnd.com.covisint.error.v1+json:
-              schema: errorResponseSchema
     /services:
       description: collection endpoints for the services that are members of this
         package.
@@ -554,11 +578,11 @@ traits:
       get:
         is:
         - getResponse
-        description: get the services that are members of this package.[Since:1.0]
+        description: get the services that are members of this package. [Since:1.0]
         headers:
           Accept:
             description: Media type.
-            example: application/vnd.com.covisint.platform.service.v1+json.
+            example: application/vnd.com.covisint.platform.service.v1+json
             type: string
             required: true
         responses:
@@ -582,7 +606,7 @@ traits:
         put:
           is:
           - putResponse
-          description: Assigns the given service as a member of the package.[Since:1.0]
+          description: Assigns the given service as a member of the package. [Since:1.0]
           headers: 
           responses:
             204:
@@ -595,7 +619,7 @@ traits:
         delete:
           is:
           - deleteResponse
-          description: Removes the given service from the package.[Since:1.0]
+          description: Removes the given service from the package. [Since:1.0]
           headers: 
           responses:
             204:
@@ -669,12 +693,12 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.package.grant.v1+json.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
           type: string
           required: true
         Content-type:
           description: Media type.
-          example: application/vnd.com.covisint.platform.package.grant.v1+json.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
           type: string
           required: true
       body:
@@ -757,12 +781,12 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.package.grant.v1+json.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
           type: string
           required: true
         Content-type:
           description: Media type.
-          example: application/vnd.com.covisint.platform.package.grant.v1+json.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
           type: string
           required: true
       body:
@@ -792,7 +816,7 @@ traits:
     headers:
       Accept:
         description: Media type.
-        example: application/vnd.com.covisint.platform.package.request.v1+json.
+        example: application/vnd.com.covisint.platform.package.request.v1+json
         type: string
         required: true
     queryParameters:
@@ -824,19 +848,19 @@ traits:
     headers:
       Accept:
         description: Media type.
-        example: application/vnd.com.covisint.platform.package.request.v1+json.
+        example: application/vnd.com.covisint.platform.package.request.v1+json
         type: string
         required: true
       Content-Type:
         description: Media type.
-        example: application/vnd.com.covisint.platform.package.request.v1+json.
+        example: application/vnd.com.covisint.platform.package.request.v1+json
         type: string
         required: true
     body:
       application/vnd.com.covisint.platform.package.request.v1+json:
         schema: packageRequest
     responses:
-      200:
+      201:
         description: The package request was successfully created
         body:
           application/vnd.com.covisint.platform.package.request.v1+json:
@@ -863,7 +887,7 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.package.request.v1+json.
+          example: application/vnd.com.covisint.platform.package.request.v1+json
           type: string
           required: true
       responses:
@@ -881,7 +905,7 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.package.request.v1+json.
+          example: application/vnd.com.covisint.platform.package.request.v1+json
           type: string
           required: false
       body:
@@ -892,3 +916,62 @@ traits:
           description: The package request was successfully deleted
         400:
           description: There was a problem with the client's request
+  /tasks/approve:
+    is:
+    - secured
+    description: endpoint used to approve package requests for person requestors.
+      [Since:1.0]
+    post:
+      is:
+      - postResponse
+      description: Approve a package request.
+      headers: 
+      queryParameters:
+        requestId:
+          description: the request id.
+          type: string
+          maxLength: 36
+          required: true
+        justification:
+          description: optional justification for the decision.
+          type: string
+          maxLength: 1000
+          required: false
+      responses:
+        202:
+          description: The approval decision was accepted and will be processed accordingly.  No
+            response entity body.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /tasks/deny:
+    is:
+    - secured
+    description: endpoint used to reject package requests for person requestors. [Since:1.0]
+    post:
+      is:
+      - postResponse
+      description: Deny a package request.
+      headers: 
+      queryParameters:
+        requestId:
+          description: the request id.
+          type: string
+          maxLength: 36
+          required: true
+        justification:
+          description: optional justification for the denial.
+          type: string
+          maxLength: 1000
+          required: false
+      responses:
+        202:
+          description: The denial decision was accepted and will be processed.  No
+            response entity body.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema

@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: Person API
-baseUri: https://api.covisintlabs.com/person/v1
+baseUri: https://api.covisintrnd.com/person/v1
 protocols:
 - HTTPS
 schemas:
@@ -225,40 +225,40 @@ traits:
             schema: errorResponseSchema
 - getResponse:
     responses:
-      404: &7125360
+      404: &16278400
         description: The URI requested is invalid or the resource requested does not
           exist.
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      406: &7141320
+      406: &16277400
         description: Unable to produce content of specified 'Accept' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: &7139040
+      500: &16276300
         description: An unknown server error occurred
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
 - postResponse:
     responses:
-      406: *7141320
-      415: &7135900
+      406: *16277400
+      415: &16272980
         description: Unable to consume content of specified 'Content-Type' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: *7139040
+      500: *16276300
 - deleteResponse:
     responses:
-      404: *7125360
-      406: *7141320
-      500: *7139040
+      404: *16278400
+      406: *16277400
+      500: *16276300
 - putResponse:
     responses:
-      404: *7125360
-      406: *7141320
+      404: *16278400
+      406: *16277400
       409:
         description: There is a conflict in identifying the resource being acted on.  There
           are two categories.  (1) The unique identifier in the URL and in the body
@@ -269,14 +269,31 @@ traits:
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      415: *7135900
-      500: *7139040
+      415: *16272980
+      500: *16276300
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
 /persons:
   is:
   - secured
   get:
     is:
     - getResponse
+    - pagableRequest
     description: Returns a collection of person objects [Since:1.0]
     headers:
       Accept:
@@ -577,35 +594,96 @@ traits:
           body:
             application/vnd.com.covisint.error.v1+json:
               schema: errorResponseSchema
-  /personInvitations:
+/personInvitations:
+  is:
+  - secured
+  description: Collection endpoint for person invitation resources
+  get:
+    is:
+    - getResponse
+    description: Performs a search for person invitations. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type for person invitation.
+        example: application/vnd.com.covisint.platform.person.invitation.v1+json
+        type: string
+        required: true
+    queryParameters:
+      invitorId:
+        description: Only retrieve person invitations for a certain invitor. Currently
+          there is no restriction on number of ids used.
+        type: string
+        required: false
+      inviteeId:
+        description: Only retrives person invitations for a certain invitee. Currently
+          there is no restriction on number of ids used.
+        type: string
+        required: false
+    responses:
+      200:
+        description: All person invitations that satisfy the query parameters were
+          successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.person.invitation.v1+json:
+            schema: personInvitation
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is:
+    - postResponse
+    description: Creates a new person invitation. [Since:1.0]
+    headers:
+      Content-type:
+        description: Media type for person invitation.
+        example: application/vnd.com.covisint.platform.person.invitation.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type for person invitation.
+        example: application/vnd.com.covisint.platform.person.invitation.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.person.invitation.v1+json:
+        schema: personInvitation
+    responses:
+      201:
+        description: A new person invitation was created and is returned in the response
+          body.
+        body:
+          application/vnd.com.covisint.platform.person.invitation.v1+json:
+            schema: personInvitation
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{invitationId}:
+    description: Endpoint for a specific person invitation.
+    uriParameters:
+      invitationId:
+        description: Unique identifier of the person invitation
+        type: string
+        maxLength: 36
+        required: true
     is:
     - secured
-    description: Collection endpoint for person invitation resources
     get:
       is:
       - getResponse
-      description: Performs a search for person invitations. [Since:1.0]
+      description: Returns the person invitation by its unique id. [Since:1.0]
       headers:
         Accept:
           description: Media type for person invitation.
-          example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+          example: application/vnd.com.covisint.platform.person.invitation.v1+json
           type: string
           required: true
-      queryParameters:
-        invitorId:
-          description: Only retrieve person invitations for a certain invitor. Currently
-            there is no restriction on number of ids used.
-          type: string
-          required: false
-        inviteeId:
-          description: Only retrives person invitations for a certain invitee. Currently
-            there is no restriction on number of ids used.
-          type: string
-          required: false
       responses:
         200:
-          description: All person invitations that satisfy the query parameters were
-            successfully retrieved (response collection may be empty).
+          description: The person invitation was successfully retrieved
           body:
             application/vnd.com.covisint.platform.person.invitation.v1+json:
               schema: personInvitation
@@ -614,378 +692,318 @@ traits:
           body:
             application/vnd.com.covisint.error.v1+json:
               schema: errorResponseSchema
-    post:
+    delete:
       is:
-      - postResponse
-      description: Creates a new person invitation. [Since:1.0]
+      - deleteResponse
+      description: Deletes a person invitation. [Since:1.0]
       headers:
-        Content-type:
-          description: Media type for person invitation.
-          example: application/vnd.com.covisint.platform.person.invitation.v1+json.
-          type: string
-          required: true
         Accept:
           description: Media type for person invitation.
-          example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+          example: application/vnd.com.covisint.platform.person.invitation.v1+json
           type: string
-          required: true
-      body:
-        application/vnd.com.covisint.platform.person.invitation.v1+json:
-          schema: personInvitation
+          required: false
       responses:
-        201:
-          description: A new person invitation was created and is returned in the
-            response body.
-          body:
-            application/vnd.com.covisint.platform.person.invitation.v1+json:
-              schema: personInvitation
+        204:
+          description: The person invitation was successfully deleted.
         400:
           description: There was a problem with the client's request
           body:
             application/vnd.com.covisint.error.v1+json:
               schema: errorResponseSchema
-    /{id}:
-      description: Endpoint for a specific person invitation.
-      uriParameters:
-        id:
-          description: Unique identifier of the person invitation
-          type: string
-          maxLength: 36
-          required: true
+    /servicePackages:
       is:
       - secured
+      description: Packages associated with an invitation. [Since:100.0]
       get:
         is:
         - getResponse
-        description: Returns the person invitation by its unique id. [Since:1.0]
+        description: Returns the service packages associated to an invitation.
         headers:
           Accept:
-            description: Media type for person invitation.
-            example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+            description: Media type for service package.
+            example: application/vnd.com.covisint.platform.resourceReferences.v1+json
             type: string
             required: true
         responses:
           200:
-            description: The person invitation was successfully retrieved
+            description: The references to the packages were successfully retrieved.  This
+              will be an empty array if no packages exist.
             body:
-              application/vnd.com.covisint.platform.person.invitation.v1+json:
-                schema: personInvitation
+              application/vnd.com.covisint.platform.resourceReferences.v1+json:
+                schema: resourceReferences
           400:
             description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-      delete:
-        is:
-        - deleteResponse
-        description: Deletes a person invitation. [Since:1.0]
-        headers:
-          Accept:
-            description: Media type for person invitation.
-            example: application/vnd.com.covisint.platform.person.invitation.v1+json.
+      /{packageId}:
+        uriParameters:
+          packageId:
+            description: Unique identifier of the package
             type: string
-            required: false
-        responses:
-          204:
-            description: The person invitation was successfully deleted.
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-      /servicePackages:
+            maxLength: 36
+            required: true
         is:
         - secured
-        description: Packages associated with an invitation. [Since:100.0]
-        get:
+        put:
           is:
-          - getResponse
-          description: Returns the service packages associated to an invitation.
+          - putResponse
+          description: Sets a package as being part of an invitation.
           headers:
+            Content-type:
+              description: Media type for service package.
+              example: application/vnd.com.covisint.platform.resourceReferences.v1+json
+              type: string
+              required: true
             Accept:
               description: Media type for service package.
-              example: application/vnd.com.covisint.platform.resourceReferences.v1+json.
+              example: application/vnd.com.covisint.platform.resourceReferences.v1+json
               type: string
               required: true
           responses:
             200:
-              description: The references to the packages were successfully retrieved.  This
-                will be an empty array if no packages exist.
+              description: The service package was successfully added to the invitation.
               body:
-                application/vnd.com.covisint.platform.resourceReferences.v1+json:
-                  schema: resourceReferences
+                application/vnd.com.covisint.platform.resourceReference.v1+json:
+                  schema: resourceReference
             400:
               description: There was a problem with the client's request
-        /{id}:
-          uriParameters:
-            id:
-              description: Unique identifier of the service
+        delete:
+          is:
+          - deleteResponse
+          description: Deletes the package from being associated to the invitation.
+          headers:
+            Accept:
+              description: Media type for service package.
+              example: application/vnd.com.covisint.platform.resourceReferences.v1+json
               type: string
-              maxLength: 36
-              required: true
+              required: false
+          responses:
+            204:
+              description: The package was successfully deleted from the invitation.
+            400:
+              description: There was a problem with the client's request
+        /codes:
           is:
           - secured
-          put:
+          get:
             is:
-            - putResponse
-            description: Sets a packages as being part of an invitation.
+            - getResponse
+            description: Returns the service codes associated to a service package
+              associated to an invitation.
             headers:
-              Content-type:
-                description: Media type for service package.
-                example: application/vnd.com.covisint.platform.resourceReferences.v1+json.
-                type: string
-                required: true
               Accept:
-                description: Media type for service package.
-                example: application/vnd.com.covisint.platform.resourceReferences.v1+json.
+                description: Media type for service code.
+                example: application/vnd.com.covisint.platform.service.codes.v1+json
                 type: string
                 required: true
             responses:
               200:
-                description: The service package was successfully added to the invitation.
+                description: The service codes were successfully retrieved.  This
+                  will be an empty array if no codes exist.
                 body:
-                  application/vnd.com.covisint.platform.resourceReference.v1+json:
-                    schema: resourceReference
+                  application/vnd.com.covisint.platform.service.codes.v1+json:
+                    schema: service.codes
+              400:
+                description: There was a problem with the client's request
+          put:
+            is:
+            - putResponse
+            description: Updates the codes for a service package associated to an
+              invitation.
+            headers:
+              Content-type:
+                description: Media type for service code.
+                example: application/vnd.com.covisint.platform.service.codes.v1+json
+                type: string
+                required: true
+              Accept:
+                description: Media type for service code.
+                example: application/vnd.com.covisint.platform.service.codes.v1+json
+                type: string
+                required: true
+            responses:
+              200:
+                description: The service codes were successfully updated.
+                body:
+                  application/vnd.com.covisint.platform.service.codes.v1+json:
+                    schema: service.codes
               400:
                 description: There was a problem with the client's request
           delete:
             is:
             - deleteResponse
-            description: Deletes the package from being associated to the invitation.
+            description: Deletes the codes for a service package associated to an
+              invitation.
             headers:
               Accept:
-                description: Media type for service package.
-                example: application/vnd.com.covisint.platform.resourceReferences.v1+json.
+                description: Media type for service code.
+                example: application/vnd.com.covisint.platform.service.codes.v1+json
                 type: string
                 required: false
             responses:
               204:
-                description: The package was successfully deleted from the invitation.
+                description: The codes were successfully deleted.
               400:
                 description: There was a problem with the client's request
-          /codes:
-            is:
-            - secured
-            get:
-              is:
-              - getResponse
-              description: Returns the service codes associated to a service package
-                associated to an invitation.
-              headers:
-                Accept:
-                  description: Media type for service code.
-                  example: application/vnd.com.covisint.platform.service.codes.v1+json.
-                  type: string
-                  required: true
-              responses:
-                200:
-                  description: The service codes were successfully retrieved.  This
-                    will be an empty array if no codes exist.
-                  body:
-                    application/vnd.com.covisint.platform.service.codes.v1+json:
-                      schema: service.codes
-                400:
-                  description: There was a problem with the client's request
-            put:
-              is:
-              - putResponse
-              description: Updates the codes for a service package associated to an
-                invitation.
-              headers:
-                Content-type:
-                  description: Media type for service code.
-                  example: application/vnd.com.covisint.platform.service.codes.v1+json.
-                  type: string
-                  required: true
-                Accept:
-                  description: Media type for service code.
-                  example: application/vnd.com.covisint.platform.service.codes.v1+json
-                  type: string
-                  required: true
-              responses:
-                200:
-                  description: The service codes were successfully updated.
-                  body:
-                    application/vnd.com.covisint.platform.service.codes.v1+json:
-                      schema: service.codes
-                400:
-                  description: There was a problem with the client's request
-            delete:
-              is:
-              - deleteResponse
-              description: Updates the codes for a service associated to an invitation.
-              headers:
-                Accept:
-                  description: Media type for service code.
-                  example: application/vnd.com.covisint.platform.service.codes.v1+json.
-                  type: string
-                  required: false
-              responses:
-                204:
-                  description: The codes were successfully deleted.
-                400:
-                  description: There was a problem with the client's request
-    /tasks/accept:
-      is:
-      - secured
-      description: Task to accept the person invitation. [Since:1.0]
-      post:
-        is:
-        - postResponse
-        description: Accept the person invitation.  This also results in the invitation
-          being deleted. [Since:1.0]
-        headers: 
-        queryParameters:
-          inviteId:
-            description: The unique identifier of the invitation being accepted.
-            type: string
-            required: true
-            maxLength: 36
-          createdPersonId:
-            description: The unique identifier of the person created during the registration
-              process that was initiated by the accepted invitation.  This is specified
-              solely for tracking purposes.
-            type: string
-            required: true
-            maxLength: 36
-        responses:
-          204:
-            description: The invitation was successfully accepted.
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-  /requests:
+  /tasks/accept:
     is:
     - secured
-    description: Collection endpoint for person request resources
+    description: Task to accept the person invitation. [Since:1.0]
+    post:
+      is:
+      - postResponse
+      description: Accept the person invitation.  This also results in the invitation
+        being deleted. [Since:1.0]
+      headers: 
+      queryParameters:
+        inviteId:
+          description: The unique identifier of the invitation being accepted.
+          type: string
+          required: true
+          maxLength: 36
+        createdPersonId:
+          description: The unique identifier of the person created during the registration
+            process that was initiated by the accepted invitation.  This is specified
+            solely for tracking purposes.
+          type: string
+          required: true
+          maxLength: 36
+      responses:
+        204:
+          description: The invitation was successfully accepted.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+/requests:
+  is:
+  - secured
+  description: Collection endpoint for person request resources
+  get:
+    is:
+    - getResponse
+    description: Performs a search for person request. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type for person request.
+        example: application/vnd.com.covisint.platform.person.request.v1+json
+        type: string
+        required: true
+    queryParameters:
+      registrantId:
+        description: Retrieve person requests for a supplied person identifier.
+        type: string
+        required: false
+    responses:
+      200:
+        description: All person requests that satisfy the query parameters were successfully
+          retrieved.  The response collection may be empty.
+        body:
+          application/vnd.com.covisint.platform.person.request.v1+json:
+            schema: personRequest
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is:
+    - postResponse
+    description: Creates a new person request. [Since:1.0]
+    headers:
+      Content-type:
+        description: Media type for person request.
+        example: application/vnd.com.covisint.platform.person.request.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type for person request.
+        example: application/vnd.com.covisint.platform.person.request.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.person.request.v1+json:
+        schema: personRequest
+    responses:
+      201:
+        description: A new person registration was created and is returned in the
+          response body.
+        body:
+          application/vnd.com.covisint.platform.person.request.v1+json:
+            schema: personRequest
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{requestId}:
+    description: Endpoint for a specific person request.
+    uriParameters:
+      requestId:
+        description: Unique identifier of the person request
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
     get:
       is:
       - getResponse
-      description: Performs a search for person request. [Since:1.0]
+      description: Returns the person request by its unique id. [Since:1.0]
       headers:
         Accept:
           description: Media type for person request.
           example: application/vnd.com.covisint.platform.person.request.v1+json
           type: string
           required: true
-      queryParameters:
-        registrantId:
-          description: Retrieve person requests for a supplied person identifier.
+      responses:
+        200:
+          description: The person request was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.person.request.v1+json:
+              schema: personReques
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    delete:
+      is:
+      - deleteResponse
+      description: Deletes a person request. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type for person request.
+          example: application/vnd.com.covisint.platform.person.request.v1+json
           type: string
           required: false
       responses:
-        200:
-          description: All person requests that satisfy the query parameters were
-            successfully retrieved.  The response collection may be empty.
-          body:
-            application/vnd.com.covisint.platform.person.request.v1+json:
-              schema: personRequest
+        204:
+          description: The person request was successfully deleted.
         400:
           description: There was a problem with the client's request
           body:
             application/vnd.com.covisint.error.v1+json:
               schema: errorResponseSchema
+  /tasks/approve:
+    is:
+    - secured
+    description: Approve a person request.
     post:
       is:
       - postResponse
-      description: Creates a new person request. [Since:1.0]
-      headers:
-        Content-type:
-          description: Media type for person request.
-          example: application/vnd.com.covisint.platform.person.request.v1+json.
+      description: Approve a person request. [Since:1.0]
+      headers: 
+      queryParameters:
+        requestId:
+          description: The unique identifier of the person request.
           type: string
           required: true
-        Accept:
-          description: Media type for person request.
-          example: application/vnd.com.covisint.platform.person.request.v1+json.
-          type: string
-          required: true
-      body:
-        application/vnd.com.covisint.platform.person.request.v1+json:
-          schema: personRequest
       responses:
-        201:
-          description: A new person registration was created and is returned in the
-            response body.
-          body:
-            application/vnd.com.covisint.platform.person.request.v1+json:
-              schema: personRequest
+        204:
+          description: The request was successfully approved.  The person is put into
+            active status.
         400:
           description: There was a problem with the client's request
           body:
             application/vnd.com.covisint.error.v1+json:
               schema: errorResponseSchema
-    /{id}:
-      description: Endpoint for a specific person request.
-      uriParameters:
-        id:
-          description: Unique identifier of the person request
-          type: string
-          maxLength: 36
-          required: true
-      is:
-      - secured
-      get:
-        is:
-        - getResponse
-        description: Returns the person request by its unique id. [Since:1.0]
-        headers:
-          Accept:
-            description: Media type for person request.
-            example: application/vnd.com.covisint.platform.person.request.v1+json.
-            type: string
-            required: true
-        responses:
-          200:
-            description: The person request was successfully retrieved
-            body:
-              application/vnd.com.covisint.platform.person.request.v1+json:
-                schema: personReques
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-      delete:
-        is:
-        - deleteResponse
-        description: Deletes a person request. [Since:1.0]
-        headers:
-          Accept:
-            description: Media type for person request.
-            example: application/vnd.com.covisint.platform.person.request.v1+json.
-            type: string
-            required: false
-        responses:
-          204:
-            description: The person request was successfully deleted.
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-    /tasks/approve:
-      is:
-      - secured
-      description: Approve a person request.
-      post:
-        is:
-        - postResponse
-        description: Approve a person request.  [Since:1.0]
-        headers: 
-        queryParameters:
-          requestId:
-            description: The unique identifier of the person request.
-            type: string
-            required: true
-        responses:
-          204:
-            description: The request was successfully approved.  The person is put
-              into active status.
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema

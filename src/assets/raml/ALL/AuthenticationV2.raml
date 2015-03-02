@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: Authentication API
-baseUri: https://api.covisintlabs.com/authn/v2
+baseUri: https://api.covisintrnd.com/authn/v2
 protocols:
 - HTTPS
 schemas:
@@ -312,40 +312,40 @@ traits:
             schema: errorResponseSchema
 - getResponse:
     responses:
-      404: &6869740
+      404: &16795700
         description: The URI requested is invalid or the resource requested does not
           exist.
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      406: &6869000
+      406: &16794820
         description: Unable to produce content of specified 'Accept' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: &6868300
+      500: &16793780
         description: An unknown server error occurred
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
 - postResponse:
     responses:
-      406: *6869000
-      415: &6867020
+      406: *16794820
+      415: &16791480
         description: Unable to consume content of specified 'Content-Type' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: *6868300
+      500: *16793780
 - deleteResponse:
     responses:
-      404: *6869740
-      406: *6869000
-      500: *6868300
+      404: *16795700
+      406: *16794820
+      500: *16793780
 - putResponse:
     responses:
-      404: *6869740
-      406: *6869000
+      404: *16795700
+      406: *16794820
       409:
         description: There is a conflict in identifying the resource being acted on.  There
           are two categories.  (1) The unique identifier in the URL and in the body
@@ -356,73 +356,29 @@ traits:
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      415: *6867020
-      500: *6868300
-/persons/{personId}/accounts:
-  description: Endpoint for a person's accounts. [Since:2.0]
+      415: *16791480
+      500: *16793780
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
+/securityQuestions:
   is:
   - secured
-  uriParameters:
-    personId:
-      description: The unique id of the person.
-      type: string
-      required: true
-  /securityQuestion:
-    is:
-    - secured
-    get:
-      is:
-      - getResponse
-      description: Returns the person's chosen security questions
-      headers:
-        Accept:
-          description: Media type for a person security question account.
-          type: string
-          required: true
-      responses:
-        200:
-          description: The person's chosen security questions were successfully retrieved.
-          body:
-            application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
-              schema: securityQuestionAccount
-        400:
-          description: There was a problem with the client's request
-          body:
-            application/vnd.com.covisint.error.v1+json:
-              schema: errorResponseSchema
-    put:
-      is:
-      - putResponse
-      description: Updates a person's security questions account (creates one if it
-        doesn't exist).
-      headers:
-        Content-type:
-          description: Media type for a person security question account.
-          example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
-          type: string
-          required: true
-        Accept:
-          description: Media type for a person security question account.
-          example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
-          type: string
-          required: true
-      body:
-        application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
-          schema: securityQuestionAccount
-      responses:
-        200:
-          description: The person's security question account was updated successfully
-            (or created if it didn't already exist).
-          body:
-            application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
-              schema: securityQuestionAccount
-        400:
-          description: There was a problem with the client's request
-          body:
-            application/vnd.com.covisint.error.v1+json:
-              schema: errorResponseSchema
-/securityQuestions:
-  description: Endpoint for security questions used to verify a person's identity.  [Since:2.0]
+  description: Endpoint for security questions used to verify a person's identity.
+    [Since:2.0]
   get:
     is:
     - getResponse
@@ -430,7 +386,7 @@ traits:
     headers:
       Accept:
         description: Media type for a security question resource.
-        example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+        example: application/vnd.com.covisint.platform.securityquestion.v1+json
         type: string
         required: true
     queryParameters:
@@ -465,12 +421,12 @@ traits:
       headers:
         Content-type:
           description: Media type for a person security question account.
-          example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+          example: application/vnd.com.covisint.platform.securityquestion.v1+json
           type: string
           required: true
         Accept:
           description: Media type for a person security question account.
-          example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+          example: application/vnd.com.covisint.platform.securityquestion.v1+json
           type: string
           required: true
       body:
@@ -532,12 +488,12 @@ traits:
     headers:
       Accept:
         description: Media type.
-        example: application/vnd.com.covisint.platform.authn.policy.v1+json.
+        example: application/vnd.com.covisint.platform.authn.policy.v1+json
         type: string
         required: true
       Content-type:
         description: Media type.
-        example: application/vnd.com.covisint.platform.authn.policy.v1+json.
+        example: application/vnd.com.covisint.platform.authn.policy.v1+json
         type: string
         required: true
     body:
@@ -571,7 +527,7 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.authn.policy.v1+json.
+          example: application/vnd.com.covisint.platform.authn.policy.v1+json
           type: string
           required: true
       responses:
@@ -607,7 +563,7 @@ traits:
     headers:
       Accept:
         description: Media type.
-        example: application/vnd.com.covisint.platform.password.v1+json.
+        example: application/vnd.com.covisint.platform.password.v1+json
         type: string
         required: true
     queryParameters:
@@ -650,7 +606,7 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.password.v1+json.
+          example: application/vnd.com.covisint.platform.password.v1+json
           type: string
           required: true
       responses:
@@ -668,12 +624,12 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.password.v1+json.
+          example: application/vnd.com.covisint.platform.password.v1+json
           type: string
           required: true
         Content-type:
           description: Media type.
-          example: application/vnd.com.covisint.platform.password.v1+json.
+          example: application/vnd.com.covisint.platform.password.v1+json
           type: string
           required: true
       queryParameters:
@@ -710,7 +666,7 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.password.policy.v1+json.
+          example: application/vnd.com.covisint.platform.password.policy.v1+json
           type: string
           required: true
       queryParameters:
@@ -743,12 +699,12 @@ traits:
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.password.policy.v1+json.
+          example: application/vnd.com.covisint.platform.password.policy.v1+json
           type: string
           required: true
         Content-type:
           description: Media type.
-          example: application/vnd.com.covisint.platform.password.policy.v1+json.
+          example: application/vnd.com.covisint.platform.password.policy.v1+json
           type: string
           required: true
       body:
@@ -780,7 +736,7 @@ traits:
         headers:
           Accept:
             description: Media type.
-            example: application/vnd.com.covisint.platform.password.policy.v1+json.
+            example: application/vnd.com.covisint.platform.password.policy.v1+json
             type: string
             required: true
         responses:
@@ -802,400 +758,307 @@ traits:
             body:
               application/vnd.com.covisint.error.v1+json:
                 schema: errorResponseSchema
-  /tasks:
-    /validate:
-      is:
-      - secured
-      description: endpoint used to validate password string with respect to password
-        policy.
-      get:
-        is:
-        - getResponse
-        description: validate password resource.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.covisint.platform.password.validationResponse.v1+json.
-            type: string
-            required: true
-          Accept-Language:
-            description: Language tag.
-            default: en
-            type: string
-            required: false
-        queryParameters:
-          policyId:
-            description: unique password policy identifier.
-            type: string
-            required: true
-          password:
-            description: password string to be validated.
-            type: string
-            required: true
-          userId:
-            description: unique person identifier.
-            type: string
-            required: false
-          scope:
-            description: scope under which a password resource is getting validated.
-            type: string
-            enum:
-            - AUTHENTICATE
-            - PASSWORD_RESET
-            - PASSWORD_SPECIFY
-            - PASSWORD_CHANGE
-            - EXPIRED_PASSWORD_CHANGE
-            required: true
-        responses:
-          200:
-            description: The password validation response.
-            body:
-              application/vnd.covisint.platform.password.validationResponse.v1+json:
-                schema: passwordValidation
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-      post:
-        is:
-        - getResponse
-        description: validate password resource.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.covisint.platform.password.validationResponse.v1+json.
-            type: string
-            required: true
-          Accept-Language:
-            description: Language tag.
-            default: en
-            type: string
-            required: false
-        queryParameters:
-          policyId:
-            description: unique password policy identifier.
-            type: string
-            required: true
-          password:
-            description: password string to be validated.
-            type: string
-            required: true
-          userId:
-            description: unique person identifier.
-            type: string
-            required: false
-          scope:
-            description: scope under which a password resource is getting validated.
-            type: string
-            enum:
-            - AUTHENTICATE
-            - PASSWORD_RESET
-            - PASSWORD_SPECIFY
-            - PASSWORD_CHANGE
-            - EXPIRED_PASSWORD_CHANGE
-            required: true
-        responses:
-          200:
-            description: The password validation response.
-            body:
-              application/vnd.covisint.platform.password.validationResponse.v1+json:
-                schema: passwordValidation
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-    /authenticate:
-      is:
-      - secured
-      description: endpoint used to authenticate the person.
-      post:
-        description: authenticate the person.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.authn.password.req.v1+json.
-            type: string
-            required: true
-          Content-type:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.authn.password.resp.v1+json.
-            type: string
-            required: true
-        body:
-          application/vnd.com.covisint.platform.authn.password.req.v1+json:
-            schema: authenticationRequest
-        responses:
-          200:
-            description: Returns the response post authentication.
-            body:
-              application/vnd.com.covisint.platform.authn.password.resp.v1+json:
-                schema: authenticationResponse
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-    /expire:
-      is:
-      - secured
-      description: endpoint used to expire password resource.
-      get:
-        is:
-        - getResponse
-        description: expire password resource.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.password.v1+json.
-            type: string
-            required: true
-        queryParameters:
-          subject:
-            description: the subject id.
-            type: string
-            required: true
-        responses:
-          200:
-            description: Returns the expired password resource.
-            body:
-              application/vnd.com.covisint.platform.password.v1+json:
-                schema: password
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-      post:
-        description: expire password resource.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.password.v1+json.
-            type: string
-            required: true
-        queryParameters:
-          subject:
-            description: the subject id.
-            type: string
-            required: true
-        responses:
-          200:
-            description: Returns the expired password resource.
-            body:
-              application/vnd.com.covisint.platform.password.v1+json:
-                schema: password
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-    /lock:
-      is:
-      - secured
-      description: endpoint used to lock password resource.
-      get:
-        is:
-        - getResponse
-        description: lock password resource.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.password.v1+json.
-            type: string
-            required: true
-        queryParameters:
-          subject:
-            description: the subject id.
-            type: string
-            required: true
-        responses:
-          200:
-            description: Returns the locked password resource.
-            body:
-              application/vnd.com.covisint.platform.password.v1+json:
-                schema: password
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-      post:
-        description: lock password resource.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.password.v1+json.
-            type: string
-            required: true
-        queryParameters:
-          subject:
-            description: the subject id.
-            type: string
-            required: true
-        responses:
-          200:
-            description: Returns the locked password resource.
-            body:
-              application/vnd.com.covisint.platform.password.v1+json:
-                schema: password
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-    /unlock:
-      is:
-      - secured
-      description: endpoint used to unlock password resource.
-      get:
-        is:
-        - getResponse
-        description: unlock password resource.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.password.v1+json.
-            type: string
-            required: true
-        queryParameters:
-          subject:
-            description: the subject id.
-            type: string
-            required: true
-        responses:
-          200:
-            description: Returns the unlocked password resource.
-            body:
-              application/vnd.com.covisint.platform.password.v1+json:
-                schema: password
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-      post:
-        description: unlock password resource.
-        headers:
-          Accept:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.password.v1+json.
-            type: string
-            required: true
-        queryParameters:
-          subject:
-            description: the subject id.
-            type: string
-            required: true
-        responses:
-          200:
-            description: Returns the unlocked password resource.
-            body:
-              application/vnd.com.covisint.platform.password.v1+json:
-                schema: password
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
-/authn/pins:
-  description: Collection endpoint for personal identification numbers. [Since:100.0]
-  /{id}:
-    description: individual resource endpoint for pin.
-    uriParameters:
-      id:
-        description: Unique identifier of the pin
-        type: string
-        maxLength: 36
-        required: true
+  /tasks/validate:
     is:
     - secured
+    description: endpoint used to validate password string with respect to password
+      policy.
     get:
       is:
       - getResponse
-      description: Returns the pin resource by its id.
+      description: validate password resource.
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.authn.pin.v1+json.
+          example: application/vnd.covisint.platform.password.validationResponse.v1+json
           type: string
+          required: true
+        Accept-Language:
+          description: Language tag.
+          default: en
+          type: string
+          required: false
+      queryParameters:
+        policyId:
+          description: unique password policy identifier.
+          type: string
+          required: true
+        password:
+          description: password string to be validated.
+          type: string
+          required: true
+        userId:
+          description: unique person identifier.
+          type: string
+          required: false
+        scope:
+          description: scope under which a password resource is getting validated.
+          type: string
+          enum:
+          - AUTHENTICATE
+          - PASSWORD_RESET
+          - PASSWORD_SPECIFY
+          - PASSWORD_CHANGE
+          - EXPIRED_PASSWORD_CHANGE
           required: true
       responses:
         200:
-          description: The pin was successfully retrieved
+          description: The password validation response.
           body:
-            application/vnd.com.covisint.platform.authn.pin.v1+json:
-              schema: pin
+            application/vnd.covisint.platform.password.validationResponse.v1+json:
+              schema: passwordValidation
         400:
           description: There was a problem with the client's request
-    put:
-      description: Creates a pin resource.
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    post:
+      is:
+      - getResponse
+      description: validate password resource.
       headers:
         Accept:
           description: Media type.
-          example: application/vnd.com.covisint.platform.authn.pin.v1+json.
+          example: application/vnd.covisint.platform.password.validationResponse.v1+json
+          type: string
+          required: true
+        Accept-Language:
+          description: Language tag.
+          default: en
+          type: string
+          required: false
+      queryParameters:
+        policyId:
+          description: unique password policy identifier.
+          type: string
+          required: true
+        password:
+          description: password string to be validated.
+          type: string
+          required: true
+        userId:
+          description: unique person identifier.
+          type: string
+          required: false
+        scope:
+          description: scope under which a password resource is getting validated.
+          type: string
+          enum:
+          - AUTHENTICATE
+          - PASSWORD_RESET
+          - PASSWORD_SPECIFY
+          - PASSWORD_CHANGE
+          - EXPIRED_PASSWORD_CHANGE
+          required: true
+      responses:
+        200:
+          description: The password validation response.
+          body:
+            application/vnd.covisint.platform.password.validationResponse.v1+json:
+              schema: passwordValidation
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /tasks/authenticate:
+    is:
+    - secured
+    description: endpoint used to authenticate the person.
+    post:
+      description: authenticate the person.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.authn.password.req.v1+json
           type: string
           required: true
         Content-type:
           description: Media type.
-          example: application/vnd.com.covisint.platform.authn.pin.v1+json.
+          example: application/vnd.com.covisint.platform.authn.password.resp.v1+json
           type: string
           required: true
       body:
-        application/vnd.com.covisint.platform.authn.pin.v1+json:
-          schema: pin
+        application/vnd.com.covisint.platform.authn.password.req.v1+json:
+          schema: authenticationRequest
       responses:
         200:
-          description: The pin resource was successfully created
+          description: Returns the response post authentication.
           body:
-            application/vnd.com.covisint.platform.authn.pin.v1+json:
-              schema: pin
+            application/vnd.com.covisint.platform.authn.password.resp.v1+json:
+              schema: authenticationResponse
         400:
           description: There was a problem with the client's request
           body:
             application/vnd.com.covisint.error.v1+json:
               schema: errorResponseSchema
-    delete:
-      description: Removes the pin by its id.
-      headers: 
-      responses:
-        204:
-          description: The pin was successfully removed.
-        400:
-          description: There was a problem with the client's request
-          body:
-            application/vnd.com.covisint.error.v1+json:
-              schema: errorResponseSchema
-  /tasks:
-    /validate:
+  /tasks/expire:
+    is:
+    - secured
+    description: endpoint used to expire password resource.
+    get:
       is:
-      - secured
-      description: endpoint used to validate pin resource.
-      post:
-        description: validate pin resource.
-        headers:
-          Content-Type:
-            description: Media type.
-            example: application/vnd.com.covisint.platform.authn.pin.v1+json.
-            type: string
-            required: true
-        body:
-          application/vnd.com.covisint.platform.authn.pin.v1+json:
-            schema: pin
-        responses:
-          204:
-            description: The pin was successfully validated.
-          400:
-            description: There was a problem with the client's request
-            body:
-              application/vnd.com.covisint.error.v1+json:
-                schema: errorResponseSchema
+      - getResponse
+      description: expire password resource.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.password.v1+json
+          type: string
+          required: true
+      queryParameters:
+        subject:
+          description: the subject id.
+          type: string
+          required: true
+      responses:
+        200:
+          description: Returns the expired password resource.
+          body:
+            application/vnd.com.covisint.platform.password.v1+json:
+              schema: password
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    post:
+      description: expire password resource.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.password.v1+json
+          type: string
+          required: true
+      queryParameters:
+        subject:
+          description: the subject id.
+          type: string
+          required: true
+      responses:
+        200:
+          description: Returns the expired password resource.
+          body:
+            application/vnd.com.covisint.platform.password.v1+json:
+              schema: password
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /tasks/lock:
+    is:
+    - secured
+    description: endpoint used to lock password resource.
+    get:
+      is:
+      - getResponse
+      description: lock password resource.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.password.v1+json
+          type: string
+          required: true
+      queryParameters:
+        subject:
+          description: the subject id.
+          type: string
+          required: true
+      responses:
+        200:
+          description: Returns the locked password resource.
+          body:
+            application/vnd.com.covisint.platform.password.v1+json:
+              schema: password
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    post:
+      description: lock password resource.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.password.v1+json
+          type: string
+          required: true
+      queryParameters:
+        subject:
+          description: the subject id.
+          type: string
+          required: true
+      responses:
+        200:
+          description: Returns the locked password resource.
+          body:
+            application/vnd.com.covisint.platform.password.v1+json:
+              schema: password
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /tasks/unlock:
+    is:
+    - secured
+    description: endpoint used to unlock password resource.
+    get:
+      is:
+      - getResponse
+      description: unlock password resource.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.password.v1+json
+          type: string
+          required: true
+      queryParameters:
+        subject:
+          description: the subject id.
+          type: string
+          required: true
+      responses:
+        200:
+          description: Returns the unlocked password resource.
+          body:
+            application/vnd.com.covisint.platform.password.v1+json:
+              schema: password
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    post:
+      description: unlock password resource.
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.password.v1+json
+          type: string
+          required: true
+      queryParameters:
+        subject:
+          description: the subject id.
+          type: string
+          required: true
+      responses:
+        200:
+          description: Returns the unlocked password resource.
+          body:
+            application/vnd.com.covisint.platform.password.v1+json:
+              schema: password
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
 /password/operations/validate:
   is:
   - secured
   description: Endpoint used to validate password string with respect to password
-    policy.  [Since:100.0]
+    policy. [Since:100.0]
   get:
     is:
     - getResponse
@@ -1203,7 +1066,7 @@ traits:
     headers:
       Accept:
         description: Media type.
-        example: application/vnd.covisint.platform.password.validationResponse.v1+json.
+        example: application/vnd.covisint.platform.password.validationResponse.v1+json
         type: string
         required: true
       Accept-Language:
@@ -1240,6 +1103,149 @@ traits:
         body:
           application/vnd.covisint.platform.password.validationResponse.v1+json:
             schema: passwordValidation
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+/persons/{personId}/accounts/securityQuestion:
+  is:
+  - secured
+  get:
+    is:
+    - getResponse
+    description: Returns the person's chosen security questions.
+    headers:
+      Accept:
+        description: Media type for a person security question account.
+        type: string
+        required: true
+    responses:
+      200:
+        description: The person's chosen security questions were successfully retrieved.
+        body:
+          application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+            schema: securityQuestionAccount
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  put:
+    is:
+    - putResponse
+    description: Updates a person's security questions account (creates one if it
+      doesn't exist).
+    headers:
+      Content-type:
+        description: Media type for a person security question account.
+        example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type for a person security question account.
+        example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+        schema: securityQuestionAccount
+    responses:
+      200:
+        description: The person's security question account was updated successfully
+          (or created if it didn't already exist).
+        body:
+          application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+            schema: securityQuestionAccount
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+/authn/pins/{id}:
+  description: individual resource endpoint for pin.
+  uriParameters:
+    id:
+      description: Unique identifier of the pin
+      type: string
+      maxLength: 36
+      required: true
+  is:
+  - secured
+  get:
+    is:
+    - getResponse
+    description: Returns the pin resource by its id.
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.authn.pin.v1+json
+        type: string
+        required: true
+    responses:
+      200:
+        description: The pin was successfully retrieved
+        body:
+          application/vnd.com.covisint.platform.authn.pin.v1+json:
+            schema: pin
+      400:
+        description: There was a problem with the client's request
+  put:
+    description: Creates a pin resource.
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.authn.pin.v1+json
+        type: string
+        required: true
+      Content-type:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.authn.pin.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.authn.pin.v1+json:
+        schema: pin
+    responses:
+      200:
+        description: The pin resource was successfully created
+        body:
+          application/vnd.com.covisint.platform.authn.pin.v1+json:
+            schema: pin
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  delete:
+    description: Removes the pin by its id.
+    headers: 
+    responses:
+      204:
+        description: The pin was successfully removed.
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+/authn/pins/tasks/validate:
+  is:
+  - secured
+  description: endpoint used to validate pin resource.
+  post:
+    description: validate pin resource.
+    headers:
+      Content-Type:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.authn.pin.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.authn.pin.v1+json:
+        schema: pin
+    responses:
+      204:
+        description: The pin was successfully validated.
       400:
         description: There was a problem with the client's request
         body:

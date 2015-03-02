@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: Authentication API
-baseUri: https://api.covisintlabs.com/authn/v2
+baseUri: https://api.covisintrnd.com/authn/v2
 protocols:
 - HTTPS
 schemas:
@@ -312,40 +312,40 @@ traits:
             schema: errorResponseSchema
 - getResponse:
     responses:
-      404: &6815160
+      404: &16162340
         description: The URI requested is invalid or the resource requested does not
           exist.
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      406: &6814420
+      406: &16161540
         description: Unable to produce content of specified 'Accept' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: &6813720
+      500: &16160040
         description: An unknown server error occurred
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
 - postResponse:
     responses:
-      406: *6814420
-      415: &6812040
+      406: *16161540
+      415: &16158340
         description: Unable to consume content of specified 'Content-Type' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: *6813720
+      500: *16160040
 - deleteResponse:
     responses:
-      404: *6815160
-      406: *6814420
-      500: *6813720
+      404: *16162340
+      406: *16161540
+      500: *16160040
 - putResponse:
     responses:
-      404: *6815160
-      406: *6814420
+      404: *16162340
+      406: *16161540
       409:
         description: There is a conflict in identifying the resource being acted on.  There
           are two categories.  (1) The unique identifier in the URL and in the body
@@ -356,73 +356,29 @@ traits:
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      415: *6812040
-      500: *6813720
-/persons/{personId}/accounts:
-  description: Endpoint for a person's accounts. [Since:2.0]
+      415: *16158340
+      500: *16160040
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
+/securityQuestions:
   is:
   - secured
-  uriParameters:
-    personId:
-      description: The unique id of the person.
-      type: string
-      required: true
-  /securityQuestion:
-    is:
-    - secured
-    get:
-      is:
-      - getResponse
-      description: Returns the person's chosen security questions
-      headers:
-        Accept:
-          description: Media type for a person security question account.
-          type: string
-          required: true
-      responses:
-        200:
-          description: The person's chosen security questions were successfully retrieved.
-          body:
-            application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
-              schema: securityQuestionAccount
-        400:
-          description: There was a problem with the client's request
-          body:
-            application/vnd.com.covisint.error.v1+json:
-              schema: errorResponseSchema
-    put:
-      is:
-      - putResponse
-      description: Updates a person's security questions account (creates one if it
-        doesn't exist).
-      headers:
-        Content-type:
-          description: Media type for a person security question account.
-          example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
-          type: string
-          required: true
-        Accept:
-          description: Media type for a person security question account.
-          example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
-          type: string
-          required: true
-      body:
-        application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
-          schema: securityQuestionAccount
-      responses:
-        200:
-          description: The person's security question account was updated successfully
-            (or created if it didn't already exist).
-          body:
-            application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
-              schema: securityQuestionAccount
-        400:
-          description: There was a problem with the client's request
-          body:
-            application/vnd.com.covisint.error.v1+json:
-              schema: errorResponseSchema
-/securityQuestions:
-  description: Endpoint for security questions used to verify a person's identity.  [Since:2.0]
+  description: Endpoint for security questions used to verify a person's identity.
+    [Since:2.0]
   get:
     is:
     - getResponse
@@ -430,7 +386,7 @@ traits:
     headers:
       Accept:
         description: Media type for a security question resource.
-        example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+        example: application/vnd.com.covisint.platform.securityquestion.v1+json
         type: string
         required: true
     queryParameters:
@@ -465,12 +421,12 @@ traits:
       headers:
         Content-type:
           description: Media type for a person security question account.
-          example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+          example: application/vnd.com.covisint.platform.securityquestion.v1+json
           type: string
           required: true
         Accept:
           description: Media type for a person security question account.
-          example: application/vnd.com.covisint.platform.securityquestion.v1+json.
+          example: application/vnd.com.covisint.platform.securityquestion.v1+json
           type: string
           required: true
       body:
@@ -488,3 +444,57 @@ traits:
           body:
             application/vnd.com.covisint.error.v1+json:
               schema: errorResponseSchema
+/persons/{personId}/accounts/securityQuestion:
+  is:
+  - secured
+  get:
+    is:
+    - getResponse
+    description: Returns the person's chosen security questions.
+    headers:
+      Accept:
+        description: Media type for a person security question account.
+        type: string
+        required: true
+    responses:
+      200:
+        description: The person's chosen security questions were successfully retrieved.
+        body:
+          application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+            schema: securityQuestionAccount
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  put:
+    is:
+    - putResponse
+    description: Updates a person's security questions account (creates one if it
+      doesn't exist).
+    headers:
+      Content-type:
+        description: Media type for a person security question account.
+        example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type for a person security question account.
+        example: application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+        schema: securityQuestionAccount
+    responses:
+      200:
+        description: The person's security question account was updated successfully
+          (or created if it didn't already exist).
+        body:
+          application/vnd.com.covisint.platform.person.account.securityQuestion.v1+json:
+            schema: securityQuestionAccount
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema

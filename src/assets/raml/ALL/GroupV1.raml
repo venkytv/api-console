@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: Group API
-baseUri: https://api.covisintlabs.com/group/v1
+baseUri: https://api.covisintrnd.com/group/v1
 protocols:
 - HTTPS
 schemas:
@@ -151,40 +151,40 @@ traits:
             schema: errorResponseSchema
 - getResponse:
     responses:
-      404: &6170900
+      404: &15622060
         description: The URI requested is invalid or the resource requested does not
           exist.
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      406: &6183940
+      406: &15621240
         description: Unable to produce content of specified 'Accept' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: &6181780
+      500: &15620340
         description: An unknown server error occurred
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
 - postResponse:
     responses:
-      406: *6183940
-      415: &6179600
+      406: *15621240
+      415: &15634960
         description: Unable to consume content of specified 'Content-Type' media type
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      500: *6181780
+      500: *15620340
 - deleteResponse:
     responses:
-      404: *6170900
-      406: *6183940
-      500: *6181780
+      404: *15622060
+      406: *15621240
+      500: *15620340
 - putResponse:
     responses:
-      404: *6170900
-      406: *6183940
+      404: *15622060
+      406: *15621240
       409:
         description: There is a conflict in identifying the resource being acted on.  There
           are two categories.  (1) The unique identifier in the URL and in the body
@@ -195,8 +195,24 @@ traits:
         body:
           application/vnd.com.covisint.error.v1+json:
             schema: errorResponseSchema
-      415: *6179600
-      500: *6181780
+      415: *15634960
+      500: *15620340
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
 /groups:
   is:
   - secured
