@@ -1,0 +1,1323 @@
+#%RAML 0.8
+title: IDM API
+baseUri: https://api.covisintrnd.com/idm/v2
+protocols:
+- HTTPS
+schemas:
+- errorResponseSchema: ! "{\n  \"id\" : \"http://api.covisint.com/schema/errorResponseSchema\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Representation of an HTTP 4xx/5xx error response.\",\n  \"properties\"
+    : {\n    \"status\" : { \n      \"type\" : \"number\",\n      \"minimum\" : 400,\n
+    \     \"maximum\" : 599,\n      \"description\" : \"The HTTP status code.\",\n
+    \     \"required\": true\n    },\n    \"apiMessage\" : { \n      \"type\" : \"string\",\n
+    \     \"description\" : \"A helpful, human-readable description of the error,
+    useful for basic diagnostics.\" \n    },\n    \"apiStatusCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"The API-specific status code.\"\n    }\n\n
+    \ }\n}\n"
+traits:
+- secured:
+    usage: Apply this to any method that needs to be secured
+    description: Requests requires authentication using a bearer token.
+    headers:
+      Authorization:
+        description: Access token that is obtained from the /token endpoint of the
+          oauth API.
+        pattern: ^Bearer .*$
+        example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+        required: true
+    responses:
+      401:
+        description: Unauthenticated request.  This is returned if the access token
+          is missing, invalid, or expired.  Access tokens are obtained through the
+          /token endpoint of the Oauth API.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      403:
+        description: Unauthorized request.  The requestor is not authorized to perform
+          the requested operation.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- getResponse:
+    responses:
+      404: &16641020
+        description: The URI requested is invalid or the resource requested does not
+          exist.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: &16638620
+        description: An unknown server error occurred
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- postResponse:
+    responses:
+      500: *16638620
+- deleteResponse:
+    responses:
+      404: *16641020
+      500: *16638620
+- putResponse:
+    responses:
+      404: *16641020
+      500: *16638620
+/applications:
+  is:
+  - secured
+  description: Collection endpoint for application resources
+  /{appId}:
+    uriParameters:
+      appId:
+        description: Application Id
+        type: string
+        required: true
+    get:
+      description: ! '## Get a single application
+
+        * If the application exists, the service responds with a status code of 200
+        and includes the single role in the body of the response.
+
+'
+      is:
+      - getResponse
+      responses:
+        200:
+          description: Application successfully retrieved
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"applications\":[\n      {\n        \"applicationID\":\"SAMPLE-APP001\",\n
+                \       \"description\":[\n          {\n            \"lang\":\"en-US\",\n
+                \           \"text\":\"Sample Portal\"\n          }\n        ],\n
+                \       \"externalApplicationID\":\"SAMPLE-PORTAL\",\n        \"name\":[\n
+                \         {\n            \"lang\":\"en-US\",\n            \"text\":\"Sample
+                Portal\"\n          }\n        ],\n        \"passCode\":\"\",\n        \"url\":\"https://sample.portal.covisint.com\"\n
+                \     }\n    ],\n    \"statusCode\":200,\n    \"subStatusCode\":\"\"\n
+                \ }\n}\n"
+  get:
+    description: ! '## Search Applications
+
+      * Existing applications can be retrieved via query parameters.
+
+      * If the applications exist, the service responds with a status code of 200
+      and includes the result in the body of the response.
+
+'
+    is:
+    - getResponse
+    responses:
+      200:
+        description: All applications that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"applications\":[\n      {\n        \"applicationID\":\"SAMPLE-APP001\",\n
+              \       \"description\":[\n          {\n            \"lang\":\"en-US\",\n
+              \           \"text\":\"Sample Portal\"\n          }\n        ],\n        \"externalApplicationID\":\"SAMPLE-PORTAL\",\n
+              \       \"name\":[\n          {\n            \"lang\":\"en-US\",\n            \"text\":\"Sample
+              Portal\"\n          }\n        ],\n        \"passCode\":\"\",\n        \"url\":\"https://sample.portal.covisint.com\"\n
+              \     }\n    ],\n    \"statusCode\":200,\n    \"subStatusCode\":\"\"\n
+              \ }\n}\n"
+/audioCaptchas:
+  is:
+  - secured
+  get:
+    description: ! '## Get audio CAPTCHA
+
+      * This service provides a CAPTCHA audio byte stream in Base64 encoded format.
+
+'
+    is:
+    - getResponse
+    responses:
+      200:
+        description: Audio CAPTCHA was successfully retrieved
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"200\",\n    \"subStatusCode\":\"\",\n
+              \   \"captchaType\":\"\",\n    \"captcha\":\"tYTBo4kHVeoZPCS6uuyizGNgaM......7eevsDqQ5nvhgT4J+FFaOXhv\",\n
+              \   \"captchaID\":\"11189590\"\n  }\n}\n"
+  post:
+    is:
+    - postResponse
+    description: ! '## Validate audio CAPTCHA
+
+'
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          captchaid:
+            description: CAPTCHA ID
+            example: 11189590
+            required: true
+            type: string
+          verificationcode:
+            description: CAPTCHA value entered by the user
+            example: 82500
+            required: true
+            type: string
+    responses:
+      200:
+        description: Audio CAPTCHA successfully validated
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"200\",\n    \"subStatusCode\":\"\"\n
+              \ }\n}\n"
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+              required parameter or input parameter name is not supported by the API\",\n
+              \   \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+      402:
+        description: CAPTCHA validation failed
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"402\",\n    \"message\":\"Invalid
+              CAPTCHA verification code\",\n    \"subStatusCode\":\"C402_9\"\n  }\n}\n"
+/emails:
+  is:
+  - secured
+  description: Collection endpoint for email resources
+  post:
+    is:
+    - postResponse
+    description: ! '## Send email invitation
+
+'
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          companyId:
+            description: The global Covisint organization ID
+            example: 90001
+            required: true
+            type: string
+          inviteType:
+            description: ! '* New Company: 1
+
+              * New Division: 2
+
+              * New User: 3
+
+'
+            example: 3
+            required: true
+            type: string
+          to:
+            description: The email address to receive the mail
+            example: user@example.com
+            required: true
+            type: string
+    headers:
+      client_id:
+        description: Client identifier to access the Covisint API
+        example: d783223b-6075-4e46-8825-a60ebf55f5fc
+        required: true
+        type: string
+    responses:
+      200:
+        description: Invitation was sent successfully
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"200\",\n    \"message\":\"Email
+              has been sent successfully.\",\n    \"subStatusCode\":\"\"\n  }\n}\n"
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"The
+              receiver email address cannot be null.\",\n    \"subStatusCode\":\"C400_1\"\n
+              \ }\n}\n"
+/imageCaptchas:
+  is:
+  - secured
+  get:
+    is:
+    - getResponse
+    description: ! '## Get image CAPTCHA
+
+      * This service provides a CAPTCHA image byte stream in Base64 encoded format.
+
+'
+    responses:
+      200:
+        description: Image CAPTCHA was successfully retrieved
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"200\",\n    \"subStatusCode\":\"\",\n
+              \   \"captchaType\":\"\",\n    \"captcha\":\"/tYTBo4kH//VfeozPCS6u......RyzGNgaM7eevsDqQ5nvhgT4J+FF/aOXhv\",\n
+              \   \"captchaID\":\"11189429\"\n  }\n}\n"
+  post:
+    is:
+    - postResponse
+    description: ! '## Validate image CAPTCHA
+
+'
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          captchaid:
+            description: CAPTCHA ID
+            example: 11189429
+            required: true
+            type: string
+          verificationcode:
+            description: CAPTCHA value entered by the user
+            example: kkbrp
+            required: true
+            type: string
+    responses:
+      200:
+        description: Image CAPTCHA successfully validated
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"200\",\n    \"subStatusCode\":\"\"\n
+              \ }\n}\n"
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+              required parameter or input parameter name is not supported by the API\",\n
+              \   \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+      402:
+        description: CAPTCHA validation failed
+        body:
+          application/octet-stream:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"402\",\n    \"message\":\"Invalid
+              CAPTCHA verification code\",\n    \"subStatusCode\":\"C402_9\"\n  }\n}\n"
+/organizations:
+  is:
+  - secured
+  description: Coolection endpoint for organization resources
+  /{orgId}:
+    uriParameters:
+      orgId:
+        description: Organization ID
+        type: string
+        required: true
+    /applications:
+      get:
+        is:
+        - getResponse
+        description: ! '## Search organization applications
+
+          * Existing organization applications can be retrieved via query parameters.
+
+          * If the applications exist, the service responds with a status code of
+          200 and includes the result in the body of the response.
+
+'
+        headers:
+          client_id:
+            description: Client identifier to access the Covisint API
+            example: d873903b-7586-4e46-8825-a60ebf55f5fc
+            required: true
+            type: string
+        responses:
+          200:
+            description: Organization applications retrieved successfully
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"applications\":[\n      {\n        \"applicationID\":\"991605\",\n
+                  \       \"externalApplicationID\":\"\",\n        \"iconID\":\"\",\n
+                  \       \"url\":null\n      }\n    ],\n    \"statusCode\":200,\n
+                  \   \"subStatusCode\":\"\"\n  }\n}\n"
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+                  required parameter or input parameter name is not supported by the
+                  API\",\n    \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+          404:
+            description: Organization does not exist
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"statusCode\":\"404\",\n    \"message\":\"Company
+                  does not exists:OEJA51-DEV04806947\",\n    \"subStatusCode\":\"C404_8\"\n
+                  \ }\n}\n"
+          423:
+            description: User is suspended or deleted. Application cannot be retrieved.
+            body:
+              application/octet-stream:
+                example: ''
+      post:
+        is:
+        - postResponse
+        description: Add organization application
+        body:
+          application/x-www-form-urlencoded:
+            formParameters:
+              packageId:
+                description: Package ID
+                example: 99103001
+                required: true
+                type: string
+        responses:
+          200:
+            description: Application successfully added
+            body:
+              application/octet-stream:
+                example: ''
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+                  required parameter or input parameter name is not supported by the
+                  API\",\n    \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+    get:
+      is:
+      - getResponse
+      description: ! '## Get a single organization application
+
+        * If the application exists, the service responds with a status code of 200
+        and includes the result in the body of the response.
+
+'
+      headers:
+        client_id:
+          description: Client identifier to access the Covisint API
+          example: d758923b-6075-4e67-8593-a60ebf55f5fc
+          required: true
+          type: string
+      responses:
+        200:
+          description: Organization details successfully retrieved
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"company\":{\n      \"organizationName\":\"Example
+                Inc.\",\n      \"org_url\":\"www.example.com\"\n      \"org_address1\":\"Suite
+                1B-201\",\n      \"org_address2\":\"123 Main Street\",\n      \"org_address3\":\"\",\n
+                \     \"org_cityRegion\":\"Tucson\",\n      \"org_stateProvince\":\"AZ\",\n
+                \     \"org_postalCode\":\"85705\",\n      \"org_countryCode\":\"US\",\n
+                \     \"organizationId\":\"9876543\",\n      \"org_dunsNumber\":\"150483782\",\n
+                \     \"org_phoneNumber\":\"12123456789\",\n      \"org_faxNumber\":\"12129876543\",\n
+                \     \"organizationCOID\":\"OABC-DEF012345678\",\n    },\n    \"statusCode\":200,\n
+                \   \"subStatusCode\":\"\"\n  }\n}\n"
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+                required parameter or input parameter name is not supported by the
+                API\",\n    \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+    put:
+      is:
+      - putResponse
+      description: ! '## Modify organization details
+
+'
+      body:
+        application/x-www-form-urlencoded:
+          formParameters:
+            organizationName:
+              description: Organization Name
+              example: Example Inc.
+              required: true
+              type: string
+            org_url:
+              description: Organization URL
+              example: www.example.com
+              required: true
+              type: string
+            org_address1:
+              description: Address Line 1
+              example: RR 1 Box 68A
+              required: true
+              type: string
+            org_address2:
+              description: Address Line 2
+              example: 16 Willow Dr
+              required: true
+              type: string
+            org_address3:
+              description: Address Line 3
+              example: Willow Farms
+              required: true
+              type: string
+            org_cityRegion:
+              description: City
+              example: Dunley
+              required: true
+              type: string
+            org_stateProvince:
+              description: State or Province
+              example: PA
+              required: true
+              type: string
+            org_postalCode:
+              description: Postal Code
+              example: 15432
+              required: true
+              type: string
+            org_countryCode:
+              description: Country Code
+              example: US
+              required: true
+              type: string
+            org_phoneNumber:
+              description: Phone Number
+              example: 12123456789
+              required: true
+              type: string
+            org_faxNumber:
+              description: Fax Number
+              example: 12129876543
+              required: true
+              type: string
+            org_dunsNumber:
+              description: DUNS Number
+              example: 150483782
+              required: true
+              type: string
+      headers:
+        client_id:
+          description: Client identifier to access the Covisint API
+          example: d758923b-6075-4e67-8593-a60ebf55f5fc
+          required: true
+          type: string
+      responses:
+        200:
+          description: If the organization exists, the service responds with a status
+            code of 200 and includes the result in the body of the response.
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"company\":{\n      \"organizationName\":\"Example
+                Inc.\",\n      \"org_url\":\"www.example.com\"\n      \"org_address1\":\"RR
+                1 Box 68A\",\n      \"org_address2\":\"16 Willow Dr\",\n      \"org_address3\":\"Willow
+                Farms\",\n      \"org_cityRegion\":\"Dunley\",\n      \"org_stateProvince\":\"PA\",\n
+                \     \"org_postalCode\":\"15432\",\n      \"org_countryCode\":\"US\",\n
+                \     \"org_phoneNumber\":\"12123456789\",\n      \"org_faxNumber\":\"12129876543\",\n
+                \     \"org_dunsNumber\":\"150483782\",\n      \"organizationId\":\"8169473\",\n
+                \     \"organizationCOID\":\"OABC-DEF012345678\",\n    },\n    \"statusCode\":200,\n
+                \   \"subStatusCode\":\"\"\n  }\n}\n"
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+                required parameter or input parameter name is not supported by the
+                API\",\n    \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+        404:
+          description: Organization does not exist
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"statusCode\":\"404\",\n    \"message\":\"Company
+                does not exist:OABC-DEF012345678\",\n    \"subStatusCode\":\"C404_8\"\n
+                \ }\n}\n"
+  get:
+    is:
+    - getResponse
+    description: ! '## Search Organizations
+
+      * Existing organizations can be retrieved via query parameters
+
+      * If the organizations exist, the service responds with a status code of 200
+      and includes the result in the body of the response
+
+'
+    headers:
+      client_id:
+        description: Client identifier to access the Covisint API
+        example: d758923b-6075-4e67-8593-a60ebf55f5fc
+        required: true
+        type: string
+    responses:
+      200:
+        description: All organizations that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"organizations\":[\n      {\n        \"ExternalOrganizationId\":\"OPQ-A12\",\n
+              \       \"GlobalOrganizationId\":\"OPQA3683757\",\n        \"organizationId\":\"3683757\",\n
+              \       \"organizationName\":\"Example Inc.\",\n        \"url\":\"http://www.example.com\"\n
+              \     },\n      {\n        \"ExternalOrganizationId\":\"OPQ-A23\",\n
+              \       \"GlobalOrganizationId\":\"OPQA3707939\",\n        \"organizationId\":\"3707939\",\n
+              \       \"organizationName\":\"Megacorp\",\n        \"url\":null\n      }\n
+              \   ],\n    \"statusCode\":200,\n    \"subStatusCode\":\"\"\n  }\n}\n"
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+              required parameter or input parameter name is not supported by the API\",\n
+              \   \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+      404:
+        description: No organizations found matching search criteria.
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"404\",\n    \"message\":\"Organization
+              Not Found\",\n    \"subStatusCode\":\"C404_1\"\n  }\n}\n"
+  post:
+    is:
+    - postResponse
+    description: ! '## Create organization
+
+'
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          organizationName:
+            description: Organization Name
+            example: Example Inc.
+            required: true
+            type: string
+          org_url:
+            description: Organization URL
+            example: www.example.com
+            required: true
+            type: string
+          org_address1:
+            description: Address Line 1
+            example: RR 1 Box 68A
+            required: true
+            type: string
+          org_address2:
+            description: Address Line 2
+            example: 16 Willow Dr
+            required: true
+            type: string
+          org_address3:
+            description: Address Line 3
+            example: Willow Farms
+            required: true
+            type: string
+          org_cityRegion:
+            description: City
+            example: Dunley
+            required: true
+            type: string
+          org_stateProvince:
+            description: State or Province
+            example: PA
+            required: true
+            type: string
+          org_postalCode:
+            description: Postal Code
+            example: 15432
+            required: true
+            type: string
+          org_countryCode:
+            description: Country Code
+            example: US
+            required: true
+            type: string
+          org_phoneNumber:
+            description: Phone Number
+            example: 12123456789
+            required: true
+            type: string
+          org_faxNumber:
+            description: Fax Number
+            example: 12129876543
+            required: true
+            type: string
+          org_dunsNumber:
+            description: DUNS Number
+            example: 150483782
+            required: true
+            type: string
+    headers:
+      client_id:
+        description: Client identifier to access the Covisint API
+        example: d758923b-6075-4e67-8593-a60ebf55f5fc
+        required: true
+        type: string
+    responses:
+      200:
+        description: Organization created successfully.
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"company\":{\n      \"organizationName\":\"Example
+              Inc.\",\n      \"org_url\":\"www.example.com\"\n      \"org_address1\":\"RR
+              1 Box 68A\",\n      \"org_address2\":\"16 Willow Dr\",\n      \"org_address3\":\"Willow
+              Farms\",\n      \"org_cityRegion\":\"Dunley\",\n      \"org_stateProvince\":\"PA\",\n
+              \     \"org_postalCode\":\"15432\",\n      \"org_countryCode\":\"US\",\n
+              \     \"org_phoneNumber\":\"12123456789\",\n      \"org_faxNumber\":\"12129876543\",\n
+              \     \"org_dunsNumber\":\"150483782\",\n      \"organizationId\":\"8169473\",\n
+              \     \"organizationCOID\":\"OABC-DEF012345678\",\n    },\n    \"statusCode\":200,\n
+              \   \"subStatusCode\":\"\"\n  }\n}\n"
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+              required parameter or input parameter name is not supported by the API\",\n
+              \   \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+/roles:
+  is:
+  - secured
+  description: Collection endpoint for role resources
+  get:
+    is:
+    - getResponse
+    description: ! '## Search Roles
+
+      * Existing roles can be retrieved via query parameters.
+
+      * To retrieve roles, the client sends a GET requests to the Resource endpoint;
+      e.g., /roles.
+
+      * If the idpUserID is passed as input then the admin grantable roles for that
+      user will be returned.
+
+      * If the idpUserID were not passed as input then the admin manageable roles
+      will be returned.
+
+      * If the roles exist, the service responds with a status code of 200 and includes
+      the result in the body of the response.
+
+'
+    headers: 
+    queryParameters:
+      idpUserID:
+        description: The IDP User ID (login ID) of the user.  See above description
+          for more information.
+        type: string
+        maxLength: 
+        required: false
+    responses:
+      200:
+        description: All services that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"200\",\n    \"subStatusCode\":\"\",\n
+              \   \"roles\":[\n      {\n        \"roleID\":\"1\",\n        \"name\":\"Super
+              User\",\n        \"externalRoleID\":\"SUPER_USERS\",\n        \"privileges\":[\n
+              \         {\n            \"privilegeID\":\"100001\",\n            \"name\":\"Super
+              User\"\n          }\n        ]\n      },\n      {\n        \"roleID\":\"2\",\n
+              \       \"name\":\"Application Admin\",\n        \"externalRoleID\":\"APP_ADMIN\",\n
+              \       \"privileges\":[\n          {\n            \"privilegeID\":\"100002\",\n
+              \           \"name\":\"App Admin\"\n          }\n        ]\n      }\n
+              \   ]\n  }\n}\n"
+      400:
+        description: There was a problem with the client's request
+  /{roleId}:
+    uriParameters:
+      roleId:
+        description: The unique identifier of the role.
+        type: string
+        maxLength: 255
+        required: true
+    description: A specific role.
+    get:
+      is:
+      - getResponse
+      description: ! '## Get a single role
+
+        If the role exists, the service responds with a status code of 200 and includes
+        the single role in the body of the response.
+
+'
+      headers: 
+      queryParameters: 
+      responses:
+        200:
+          description: All services that satisfy the query parameters were successfully
+            retrieved (response collection may be empty).
+          body:
+            application/json: 
+        400:
+          description: There was a problem with the client's request
+        404:
+          description: Role not found
+          body:
+            application/json:
+              example: ''
+/userRequests:
+  is:
+  - secured
+  post:
+    is:
+    - postResponse
+    description: ! '## Register a user
+
+'
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          address1:
+            description: Address line 1
+            example: RR 1 Box 68A
+            required: true
+            type: string
+          address2:
+            description: Address line 2
+            example: 16 Willow Dr
+            required: true
+            type: string
+          address3:
+            description: Address line 3
+            example: Willow Farms
+            required: true
+            type: string
+          city:
+            description: City
+            example: Dunley
+            required: true
+            type: string
+          country:
+            description: Country
+            example: US
+            required: true
+            type: string
+          emailAddress:
+            description: User email address. Primarily used for email notification.
+            example: mary.roe@example.com
+            required: true
+            type: string
+          faxNumber:
+            description: Fax number
+            example: 65643146177
+            required: true
+            type: string
+          firstName:
+            description: First name
+            example: Mary
+            required: true
+            type: string
+          fixedQuestion1Answer:
+            description: The answer for the first security question selected
+            example: San Francisco
+            required: true
+            type: string
+          fixedQuestion1Id:
+            description: The unique ID of the first security question selected
+            example: 1
+            required: true
+            type: string
+          fixedQuestion2Answer:
+            description: The answer for the second security question selected
+            example: Red
+            required: true
+            type: string
+          fixedQuestion2Id:
+            description: The unique ID of the second security question selected
+            example: 2
+            required: true
+            type: string
+          idpUserID:
+            description: ! 'Identity Provider User ID. Typically this would be the
+              user login name.
+
+              User will use this ID for authentication with Covisint Cloud Identity
+              Provider.
+
+              The idpUserID must be 4 to 80 characters, can be alphanumeric and can
+              contain no special characters.
+
+'
+            example: USER0002
+            required: true
+            type: string
+          jobTitle:
+            description: Job title
+            example: Vice President
+            required: true
+            type: string
+          languagePreference:
+            description: ! 'Language Preference. Should be in ISO 639-1 Code format.
+              Max of 2 chars (e.g. "KO" - Korean, "EN" - English). Default is "EN"
+
+'
+            example: EN
+            required: true
+            type: string
+          lastName:
+            description: Last name
+            example: Roe
+            required: true
+            type: string
+          middleName:
+            description: Middle name
+            example: Susan
+            required: true
+            type: string
+          mobilePhoneNumber:
+            description: Mobile number
+            example: 13671605385
+            required: true
+            type: string
+          password:
+            description: Password. Can be in plain text or SSHA1.
+            example: LetMeIn12!
+            required: true
+            type: string
+          phoneNumber:
+            description: Phone number
+            example: 13671605783
+            required: true
+            type: string
+          postalCode:
+            description: Postal code
+            example: 92000
+            required: true
+            type: string
+          stateProvince:
+            description: State or Province
+            example: PA
+            required: true
+            type: string
+          status:
+            description: User status
+            example: Active
+            required: true
+            type: string
+    headers:
+      client_id:
+        description: Client identifier to access the Covisint API
+        example: d758923b-6075-4e67-8593-a60ebf55f5fc
+        required: true
+        type: string
+    responses:
+      200:
+        description: ! 'Upon successful creation, the user object will be returned
+          to the client.
+
+          Once the user is created, the user''s IDPUserID cannot be changed.
+
+'
+        body:
+          application/json:
+            example: 
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+              required parameter or input parameter name is not supported by the API.\",\n
+              \   \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+      423:
+        description: User already exists in the system.
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"423\",\n    \"message\":\"User
+              exist in the system. idpUserID=USER001\",\n    \"subStatusCode\":\"C423_3\"\n
+              \ }\n}\n"
+/users:
+  is:
+  - secured
+  description: Collection endpoint for user resources
+  /{userId}:
+    uriParameters:
+      userId:
+        description: Covisint Unique ID (CUID)
+        type: string
+        required: true
+    get:
+      is:
+      - getResponse
+      description: ! '## Retrieve an existing user record
+
+'
+      responses:
+        200:
+          description: User record successfully retrieved
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"statusCode\":200,\n    \"subStatusCode\":\"\",\n
+                \   \"user\":{\n      \"firstName\":\"Mary\",\n      \"middleName\":\"Susan\",\n
+                \     \"lastName\":\"Roe\",\n      \"prefix\":\"Dr.\",\n      \"office\":\"\",\n
+                \     \"fixedQuestion1Id\":\"0\",\n      \"fixedQuestion1Answer\":\"White\",\n
+                \     \"fixedQuestion2Id\":\"4\",\n      \"fixedQuestion2Answer\":\"Austin\",\n
+                \     \"challengeQuestion\":\"What is my dog's name?\",\n      \"challengeAnswer\":\"Coco\",\n
+                \     \"status\":\"Active\",\n      \"address1\":\"RR 1 Box 68A\",\n
+                \     \"address2\":\"16 Willow Dr\",\n      \"address3\":\"Willow
+                Farms\",\n      \"city\":\"Dunley\",\n      \"stateProvince\":\"PA\",\n
+                \     \"postalCode\":\"48075\",\n      \"country\":\"US\",\n      \"phoneNumber\":\"313-227-9707\",\n
+                \     \"mobileNumber\":\"313-227-9707\",\n      \"emailAddress\":\"user@example.com\",\n
+                \     \"faxNumber\":\"\",\n      \"jobTitle\":\"\",\n      \"idpUserID\":\"USER001\"\n
+                \   }\n  }\n}\n"
+        404:
+          description: User record not found
+          body:
+            application/json:
+              example: ! "{\n  \"data\":{\n    \"statusCode\":\"404\",\n    \"message\":\"User
+                Not Found\",\n    \"subStatusCode\":\"C404_4\"\n  }\n}\n"
+    /applications:
+      get:
+        is:
+        - getResponse
+        description: ! '## Search User Applications
+
+          * Existing user applications can be retrieved via query parameters.
+
+          * If the applications exist, the service responds with a status code of
+          200 and includes the result in the body of the response.
+
+'
+        responses:
+          200:
+            description: All applications that satisfy the query parameters were successfully
+              retrieved (response collection may be empty).
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"applications\":[\n      {\n        \"applicationID\":\"APP00123\",\n
+                  \       \"description\":[\n          {\n            \"lang\":\"en-US\",\n
+                  \           \"text\":null\n          }\n        ],\n        \"externalApplicationID\":\"\",\n
+                  \       \"iconID\":\"\",\n        \"name\":[\n          {\n            \"lang\":\"en-US\",\n
+                  \           \"text\":null\n          }\n        ],\n        \"url\":\"\"\n
+                  \     },\n      {\n        \"applicationID\":\"APP000234\",\n        \"description\":[\n
+                  \         {\n            \"lang\":\"en-US\",\n            \"text\":\"Sample
+                  Portal\"\n          }\n        ],\n        \"externalApplicationID\":\"\",\n
+                  \       \"iconID\":\"\",\n        \"name\":[\n          {\n            \"lang\":\"en-US\",\n
+                  \           \"text\":\"Sample Portal\"\n          }\n        ],\n
+                  \       \"url\":\"https://sample.portal.covisint.com\"\n      }\n
+                  \   ],\n    \"statusCode\":200,\n    \"subStatusCode\":\"\"\n  }\n}\n"
+          404:
+            description: User does not exist
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"statusCode\":\"404\",\n    \"message\":\"User
+                  Not Found\",\n    \"subStatusCode\":\"C404_4\"\n  }\n}\n"
+          423:
+            description: User is suspended or deleted. Application cannot be retrieved
+            body:
+              application/json: 
+      post:
+        is:
+        - postResponse
+        description: ! '## Add User Applications
+
+'
+        body:
+          application/x-www-form-urlencoded:
+            formParameters:
+              packageId:
+                description: Package ID
+                example: 99103000
+                required: true
+                type: string
+        responses:
+          200:
+            description: User application successfully added
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"statusCode\":200,\n    \"subStatusCode\":\"\"\n
+                  \ }\n}\n"
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+                  required parameter or input parameter name is not supported by the
+                  API\",\n    \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+          500:
+            description: Application is already granted or requested, or the user
+              to be granted does not exist
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"statusCode\":\"500\",\n    \"message\":\"Application
+                  is already granted or requested.\",\n    \"subStatusCode\":\"C500_1\"\n
+                  \ }\n}\n"
+    /roles:
+      get:
+        is:
+        - getResponse
+        description: ! '## Search User Roles
+
+          * Existing user roles can be retrieved via query parameters
+
+          * If the roles exist, the service responds with a status code of 200 and
+          includes the result in the body of the response.
+
+'
+        responses:
+          200:
+            description: All user roles that satisfy the query parameters were successfully
+              retrieved (response collection may be empty).
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"roles\":[\n      {\n        \"name\":\"Exchange
+                  Operator\",\n        \"privileges\":[\n          {\n            \"name\":\"Approve
+                  New Organization\",\n            \"privilegeID\":\"501\"\n          },\n
+                  \         {\n            \"name\":\"Approve User\",\n            \"privilegeID\":\"502\"\n
+                  \         }\n        ],\n        \"externalRoleID\":\"\",\n        \"roleID\":\"609\"\n
+                  \     }\n    ],\n    \"statusCode\":200,\n    \"subStatusCode\":\"\"\n
+                  \ }\n}\n"
+          404:
+            description: User does not exist
+            body:
+              application/json:
+                example: ! "{\n  \"data\":{\n    \"statusCode\":\"404\",\n    \"message\":\"User
+                  Not Found\",\n    \"subStatusCode\":\"C404_4\"\n  }\n}\n"
+  get:
+    is:
+    - getResponse
+    description: ! '## Search Users
+
+      * Existing users can be retrieved via query parameters
+
+      * If the users exist, the service responds with a status code of 200 and includes
+      the result in the body of the response.
+
+'
+    queryParameters:
+      emailAddress:
+        description: User email address
+        example: user@example.com
+        required: true
+        type: string
+    responses:
+      200:
+        description: All users that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":200,\n    \"subStatusCode\":\"\",\n
+              \   \"users\":[\n      {\n        \"firstName\":\"Mary\",\n        \"middleName\":\"Susan\",\n
+              \       \"lastName\":\"Roe\",\n        \"prefix\":\"Dr.\",\n        \"office\":\"\",\n
+              \       \"fixedQuestion1Id\":\"0\",\n        \"fixedQuestion1Answer\":\"White\",\n
+              \       \"fixedQuestion2Id\":\"4\",\n        \"fixedQuestion2Answer\":\"Austin\",\n
+              \       \"challengeQuestion\":\"What is my dog's name?\",\n        \"challengeAnswer\":\"Coco\",\n
+              \       \"status\":\"Active\",\n        \"address1\":\"RR 1 Box 68A\",\n
+              \       \"address2\":\"16 Willow Dr\",\n        \"address3\":\"Willow
+              Farms\",\n        \"city\":\"Dunley\",\n        \"stateProvince\":\"PA\",\n
+              \       \"postalCode\":\"48075\",\n        \"country\":\"US\",\n        \"phoneNumber\":\"313-227-9707\",\n
+              \       \"mobileNumber\":\"313-227-9707\",\n        \"emailAddress\":\"user@example.com\",\n
+              \       \"faxNumber\":\"\",\n        \"jobTitle\":\"\",\n        \"idpUserID\":\"USER001\"\n
+              \     }\n    ]\n  }\n}\n"
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+              required parameter or input parameter name is not supported by the API\",\n
+              \   \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+      404:
+        description: No user records found matching specified criteria
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"404\",\n    \"message\":\"User
+              Not Found\",\n    \"subStatusCode\":\"C404_4\"\n  }\n}\n"
+  post:
+    is:
+    - postResponse
+    description: ! '## Create user
+
+'
+    headers:
+      client_id:
+        description: Client identifier to access the Covisint API
+        example: d758923b-6075-4e67-8593-a60ebf55f5fc
+        required: true
+        type: string
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          address1:
+            description: Address line 1
+            example: RR 1 Box 68A
+            required: true
+            type: string
+          address2:
+            description: Address line 2
+            example: 16 Willow Dr
+            required: true
+            type: string
+          address3:
+            description: Address line 3
+            example: Willow Farms
+            required: true
+            type: string
+          city:
+            description: City
+            example: Dunley
+            required: true
+            type: string
+          country:
+            description: Country. Should be in ISO 3166-1 Alpha-2 code format. Default
+              is "US"
+            example: US
+            required: true
+            type: string
+          emailAddress:
+            description: Email address. Primarily used for email notification.
+            example: user@example.com
+            required: true
+            type: string
+          faxNumber:
+            description: Fax number
+            example: 313-227-9890
+            required: true
+            type: string
+          firstName:
+            description: First name
+            example: Mary
+            required: true
+            type: string
+          fixedQuestion1Answer:
+            description: The answer for the first security question selected
+            example: San Francisco
+            required: true
+            type: string
+          fixedQuestion1Id:
+            description: The unique ID of the first security question selected
+            example: 1
+            required: true
+            type: string
+          fixedQuestion2Answer:
+            description: The answer for the second security question selected
+            example: Red
+            required: true
+            type: string
+          fixedQuestion2Id:
+            description: The unique ID of the second security question selected
+            example: 2
+            required: true
+            type: string
+          idpUserID:
+            description: ! 'Identity Provider User ID. Typically this would be the
+              user login name.
+
+              User will use this ID for authentication with Covisint Cloud Identity
+              Provider.
+
+              The idpUserID must be 4 to 80 characters, can be alphanumeric and can
+              contain no special characters.
+
+'
+            example: USER0002
+            required: true
+            type: string
+          jobTitle:
+            description: Job title
+            example: Vice President
+            required: true
+            type: string
+          languagePreference:
+            description: ! 'Language Preference. Should be in ISO 639-1 Code format.
+              Max of 2 chars (e.g. "KO" - Korean, "EN" - English). Default is "EN"
+
+'
+            example: EN
+            required: true
+            type: string
+          lastName:
+            description: Last name
+            example: Roe
+            required: true
+            type: string
+          middleName:
+            description: Middle name
+            example: Susan
+            required: true
+            type: string
+          mobilePhoneNumber:
+            description: Mobile number
+            example: 13671605385
+            required: true
+            type: string
+          password:
+            description: Password. Can be in plain text or SSHA1.
+            example: LetMeIn12!
+            required: true
+            type: string
+          phoneNumber:
+            description: Phone number
+            example: 13671605783
+            required: true
+            type: string
+          postalCode:
+            description: Postal code
+            example: 92000
+            required: true
+            type: string
+          stateProvince:
+            description: State or Province
+            example: PA
+            required: true
+            type: string
+          status:
+            description: User Status
+            example: Active
+            required: true
+            type: string
+    responses:
+      200:
+        description: User created successfully.
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"200\",\n    \"subStatusCode\":\"\",\n
+              \   \"user\":{\n      \"idpUserID\":\"USER0002\",\n      \"firstName\":\"Mary\",\n
+              \     \"lastName\":\"Roe\",\n      \"password\":\"gImsixUH6kU5RsR4zwI9lUVX6BMfW9j53gd\",\n
+              \     \"emailAddress\":\"mary.roe@example.com\"\n    }\n  }\n}\n"
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"400\",\n    \"message\":\"Missing
+              required parameter or input parameter name is not supported by the API.\",\n
+              \   \"subStatusCode\":\"C400_1\"\n  }\n}\n"
+      423:
+        description: User already exists in the system.
+        body:
+          application/json:
+            example: ! "{\n  \"data\":{\n    \"statusCode\":\"423\",\n    \"message\":\"User
+              exist in the system. idpUserID=USER0002\",\n    \"subStatusCode\":\"C423_3\"\n
+              \ }\n}\n"
+/tasks/userApplicationStatus:
+  put:
+    is:
+    - putResponse
+    description: ! '## Modify user application status
+
+      * An existing user application grant can be suspended, unsuspended or revoked
+
+'
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          externalApplicationID:
+            description: IDP application id. Used for mapping IDP app id with Covisint
+              Cloud Identity Provider
+            example: PEJA51-PORTAL
+            required: true
+            type: string
+          reason:
+            description: Short description of the request
+            example: Unsuspend user application
+            required: true
+            type: string
+          status:
+            description: ! 'User application status.  Possible values:
+
+              * suspend
+
+              * unsuspend
+
+              * delete
+
+'
+            example: unsuspend
+            required: true
+            type: string
+    responses:
+      200:
+        description: Task performed successfully.
+        body:
+          application/json:
+            example: ''
+/tasks/userNameSuggestion:
+  get:
+    is:
+    - getResponse
+    description: ! '## Username suggestion
+
+'
+    headers:
+      client_id:
+        description: Client identifier to access the Covisint API
+        example: d783223b-6075-4e46-8825-a60ebf55f5fcA
+        required: true
+        type: string
+    responses:
+      200:
+        body:
+          application/json: 

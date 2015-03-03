@@ -1,0 +1,338 @@
+#%RAML 0.8
+title: Organization API
+baseUri: https://api.covisintrnd.com/organization/v1
+protocols:
+- HTTPS
+schemas:
+- resourceReference: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resourceReference\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"Schema representing links\",\n  \"type\" : \"object\",\n  \"properties\" :
+    {\n    \"id\" : {\n      \"type\" : \"string\",\n      \"maxLength\" : 36,\n      \"description\"
+    : \"The unique identifier for the resource.\",\n      \"required\": true\n    },\n
+    \   \"type\" : {\n      \"type\" : \"string\",\n      \"description\" : \"The
+    type of the resource.\"\n    },\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"description\" : \"The realm of the resource.\"\n    }\n  }\n}\n"
+- resource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resource\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"description\" : \"Core schema\",\n
+    \ \"definitions\" : {\n    \"resource\" : {\n      \"id\" : \"resource\",\n      \"type\"
+    : \"object\",\n      \"description\" : \"A basic resource.\",\n      \"properties\"
+    : {\n        \"id\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The unique identifier for this resource.\",\n
+    \         \"required\": true\n        },\n        \"version\": {\n          \"type\"
+    : \"number\",\n          \"minimum\" : 0,\n          \"maximum\" : 9223372036854775807,\n
+    \         \"description\" : \"The current version for this resource.  Exists once
+    the resource has been saved. This is mandatory for PUT requests, but should not
+    be supplied for POST requests.\",\n          \"required\": false\n        },\n
+    \       \"creator\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The creator of this resource. This is mandatory
+    if x-requestor header is NOT available\",\n          \"required\": false\n        },\n
+    \       \"creatorAppId\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The application id of the creator of this
+    resource.\",\n          \"required\": false\n        },\n        \"creation\"
+    : {\n          \"type\" : \"number\",\n          \"minimum\" : 0,\n          \"maximum\"
+    : 9223372036854775807,\n          \"description\" : \"If this value is provided
+    in a POST / PUT request body, it will be ignored and system will generate value
+    as time, in milliseconds since the epoch, when this resource was created or upda\",\n
+    \         \"required\": false            \n        }\n      }\n    }\n  }\n}\n"
+- realmScopedResource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/realmScopedResource\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Expands on the base resource and adds a realm attribute.\",\n
+    \ \"extends\" : {\n        \"$ref\" : \"http://api.covisint.com/schema/resource#\"\n
+    \ },\n  \"properties\" : {\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"maxLength\" : 16,\n      \"pattern\" : \"^[A-Za-z0-9]{2,25}$\",\n      \"description\"
+    : \"The realm in which this resource is being created. This is mandatory if x-realm
+    header is NOT available\",\n      \"required\": false\n    }\n  }\n}\n"
+- errorResponseSchema: ! "{\n  \"id\" : \"http://api.covisint.com/schema/errorResponseSchema\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Representation of an HTTP 4xx/5xx error response.\",\n  \"properties\"
+    : {\n    \"status\" : { \n      \"type\" : \"number\",\n      \"minimum\" : 400,\n
+    \     \"maximum\" : 599,\n      \"description\" : \"The HTTP status code.\",\n
+    \     \"required\": true\n    },\n    \"apiMessage\" : { \n      \"type\" : \"string\",\n
+    \     \"description\" : \"A helpful, human-readable description of the error,
+    useful for basic diagnostics.\" \n    },\n    \"apiStatusCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"The API-specific status code.\"\n    }\n\n
+    \ }\n}\n"
+- serviceCode: ! "{\n  \"id\" : \"http://api.covisint.com/schema/serviceCodes\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\": \"object\",\n
+    \ \"description\": \"The site/service/location codes granted along with a service.\",\n
+    \ \"properties\": {\n    \"code\": { \"type\": \"string\", \"required\": true,
+    \"maxLength\": 200, \"description\": \"The code value.\" },\n    \"codeKind\":
+    { \"type\": \"string\", \"required\": true, \"maxLength\": 36, \"description\":
+    \"The associated business unit.\" }\n  }\n}     \n"
+- serviceCodes: ! "{\n  \"type\" : \"array\",\n  \"description\" : \"The site/service/location
+    codes granted along with the service, if any.\",\n  \"items\" : { \"$ref\" : \"http://api.covisint.com/schema/serviceCode#\"},\n
+    \ \"required\": false\n}\n"
+- address: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/address\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"A container for the subject's address elements.\",\n  \"properties\" : {\n
+    \   \"type\" : \"string\",\n    \"streets\" : {\n        \"type\" : \"array\",\n
+    \       \"description\" : \"An array of address streets (i.e. address line 1,
+    2, 3).\",\n        \"minItems\" : 0,\n        \"items\" : {\n          \"type\":
+    \"string\",\n          \"maxLength\" : 255\n        }\n      },\n      \"city\"
+    : { \"type\" : \"string\", \"maxLength\" : 60, \"description\" : \"The city name.\"
+    },\n      \"state\" : { \"type\" : \"string\", \"maxLength\" : 60, \"description\"
+    : \"The state/province name or code.\" },\n      \"postal\" : { \"type\" : \"string\",
+    \"maxLength\" : 10, \"description\" : \"The postal or zip code.\" },\n      \"country\"
+    : { \"type\" : \"string\", \"minLength\" : 2, \"maxLength\" : 3, \"description\"
+    : \"The ISO country code. http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\"}\n
+    \ }\n}\n"
+- phone: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/phone\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n    \"description\"
+    : \"A container for phone number details.\",\n    \"properties\" : {\n      \"number\"
+    : { \"type\" : \"string\",\"maxLength\" : 100, \"description\" : \"The phone number.\"
+    },\n      \"type\" : { \"enum\" : [ \"main\", \"mobile\", \"fax\" ], \"description\"
+    : \"The phone number type.\" }\n    },\n    \"required\" : [ \"type\" ]\n}             \n"
+- organization: ! "{\n  \"id\" : \"http://api.covisint.com/schema/organization/v1\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"A representation of an organization, according to the application/vnd.com.covisint.platform.organization.v1+json
+    media type.\",\n  \"extends\" : {\n    \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"id\": {\n       \"maxLength\" : 100\n    },\n
+    \   \"version\": {\n      \"description\" : \"The current version for this resource.
+    \ Exists once the resource has been saved. This is mandatory for PUT requests,
+    but should not be supplied for POST requests. User supplied value will be ignored
+    and will be set to the creation value.\"\n    },\n    \"status\" : { \n      \"enum\"
+    : [ \"active\", \"suspended\", \"inactive\", \"unactivated\" ], \n      \"description\"
+    : \"The organization's status.  Status can be changed through tasks; value is
+    ignored on POST or PUT requests.\"\n    },\n    \"parentOrganization\": {\n      \"description\":
+    \"The parent organization.  Used to create an organization hierarchy.\",\n      \"$ref\":
+    \"http://api.covisint.com/schema/resourceReference#\"\n    },\n    \"rootOrganization\":
+    {\n      \"description\": \"The organization at the root of this hierarchy.  This
+    is the top-most organization that does not have a parent\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    },\n    \"name\" : {\n      \"type\" : \"string\",\n
+    \     \"description\" : \"The organization's name.\",\n      \"maxLength\" : 245,\n
+    \     \"required\": true\n    },\n    \"addresses\" : {\n      \"type\" : \"array\",\n
+    \     \"description\" : \"A container for the organization's addresses.\",\n      \"minItems\"
+    : 1,\n      \"items\" : { \"ref\" : \"http://api.covisint.com/schema/address#\"
+    }\n    },\n    \"phones\" : {\n      \"type\" : \"array\",\n      \"description\"
+    : \"A container for the organization's phone number(s).\",\n      \"minItems\"
+    : 0,\n      \"items\" : { \"$ref\" : \"http://api.covisint.com/schema/phone#\"
+    }\n    },\n    \"email\" : {\n      \"type\" : \"string\",\n      \"maxLength\"
+    : 1000, \n      \"description\" : \"The organization's email address.\"\n    },\n
+    \   \"url\" : {\n      \"type\" : \"string\",\n      \"description\" : \"A URL
+    specified for this organization.\",\n      \"maxLength\" : 1000\n    },\n    \"authDomain\"
+    : {\n      \"type\" : \"string\",\n      \"description\" : \"This organization's
+    authentication domain.\",\n      \"maxLength\" : 50\n    },\n    \"organizationType\"
+    : {\n      \"type\" : \"string\",\n      \"description\" : \".\",\n      \"maxLength\"
+    : 5,\n      \"required\" : true,\n      \"default\" : \"AO\"\n    },\n    \"organizationSubtype\"
+    : {\n      \"type\" : \"string\",\n      \"description\" : \".\",\n      \"maxLength\"
+    : 10\n    },\n    \"accountNumber\" : {\n      \"type\" : \"string\",\n      \"description\"
+    : \".\",\n      \"maxLength\" : 50\n    },\n    \"externalCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"Code assigned to identify the organization
+    to external systems.\",\n      \"maxLength\" : 50\n    },\n    \"duns\" : {\n
+    \     \"type\" : \"string\",\n      \"description\" : \".\",\n      \"maxLength\"
+    : 50\n    },\n    \"classification\" : {\n      \"type\" : \"string\",\n      \"description\"
+    : \".\",\n      \"maxLength\" : 100\n    },\n    \"public\" : {\n      \"type\"
+    : \"boolean\",\n      \"description\" : \"Whether this is a public organization.
+    \ Defaults to true.\"\n    },\n    \"passwordPolicy\" : {\n      \"description\":
+    \"The password policy associated to this particular organization.\",  \n      \"$ref\":
+    \"http://api.covisint.com/schema/resourceReference#\"\n    },\n    \"authenticationPolicy\"
+    : {\n      \"description\": \"The authentication policy associated to this particular
+    organization.\",  \n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n
+    \   }\n  }\n}\n"
+traits:
+- secured:
+    usage: Apply this to any method that needs to be secured
+    description: Requests requires authentication using a bearer token.
+    headers:
+      Authorization:
+        description: Access token that is obtained from the /token endpoint of the
+          oauth API.
+        pattern: ^Bearer .*$
+        example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+        required: true
+    responses:
+      401:
+        description: Unauthenticated request.  This is returned if the access token
+          is missing, invalid, or expired.  Access tokens are obtained through the
+          /token endpoint of the Oauth API.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      403:
+        description: Unauthorized request.  The requestor is not authorized to perform
+          the requested operation.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- getResponse:
+    responses:
+      404: &17404840
+        description: The URI requested is invalid or the resource requested does not
+          exist.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      406: &17404220
+        description: Unable to produce content of specified 'Accept' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: &17403580
+        description: An unknown server error occurred
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- postResponse:
+    responses:
+      406: *17404220
+      415: &17402420
+        description: Unable to consume content of specified 'Content-Type' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: *17403580
+- deleteResponse:
+    responses:
+      404: *17404840
+      406: *17404220
+      500: *17403580
+- putResponse:
+    responses:
+      404: *17404840
+      406: *17404220
+      409:
+        description: There is a conflict in identifying the resource being acted on.  There
+          are two categories.  (1) The unique identifier in the URL and in the body
+          are different.  (2) The current version of the resource being updated and
+          the version sent in the body of the request. This may be an indication that
+          the resource has changed since the client loaded it. The conflict should
+          be resolved and the update resubmitted with the current version of the resource.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      415: *17402420
+      500: *17403580
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
+/organizations:
+  is:
+  - secured
+  description: collection endpoint for organization resources [Since:1.0]
+  get:
+    is:
+    - getResponse
+    description: Performs a search for organization resources.
+    headers:
+      Accept:
+        description: Used to request the appropriate organization resource media type.
+        example: application/vnd.com.covisint.platform.organization.v1+json
+        type: string
+        required: true
+    queryParameters:
+      name:
+        description: Retrieve only organizations with the specified name.  The search
+          is case-insensitve.  Multiple parameters are supported and the search results
+          will be a union.
+        type: string
+        maxLength: 255
+        required: false
+    responses:
+      200:
+        description: All services that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.service.v1+json:
+            schema: service
+      400:
+        description: There was a problem with the client's request
+  post:
+    is:
+    - postResponse
+    description: Create a new organization. [Since:1.0]
+    headers:
+      Content-type:
+        description: The organization media type being sent in the entity body.
+        example: application/vnd.com.covisint.platform.organization.v1+json
+        type: string
+        required: true
+      Accept:
+        description: The organization media type being sent in the entity body.
+        example: application/vnd.com.covisint.platform.organization.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.organization.v1+json:
+        schema: organization
+    responses:
+      201:
+        description: The organization was successfully created.
+        body:
+          application/vnd.com.covisint.platform.organization.v1+json:
+            schema: organization
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{id}:
+    uriParameters:
+      id:
+        description: The unique organization identifier (i.e. Global Covisint Organization
+          ID).
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    description: individual resource endpoint for organization resources
+    get:
+      is:
+      - getResponse
+      description: get organization by id. [Since:1.0]
+      headers:
+        Accept:
+          description: The organization media type being sent in the entity body.
+          example: application/vnd.com.covisint.platform.organization.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The organization was successfully retrieved.
+          body:
+            application/vnd.com.covisint.platform.organization.v1+json:
+              schema: organization
+        400:
+          description: There was a problem with the client's request
+    put:
+      is:
+      - putResponse
+      description: Updates an organization, creating one when it doesn't exist. [Since:1.0]
+      headers:
+        Content-type:
+          description: The organization media type being sent in the entity body.
+          example: application/vnd.com.covisint.platform.organization.v1+json
+          type: string
+          required: true
+        Accept:
+          description: The organization media type being sent in the entity body.
+          example: application/vnd.com.covisint.platform.organization.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.organization.v1+json:
+          schema: organization
+      responses:
+        200:
+          description: The organization was successfully updated.
+          body:
+            application/vnd.com.covisint.platform.organization.v1+json:
+              schema: organization
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema

@@ -1,0 +1,977 @@
+#%RAML 0.8
+title: Service API
+baseUri: https://api.covisintrnd.com/service/v1
+protocols:
+- HTTPS
+schemas:
+- resourceReference: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resourceReference\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"Schema representing links\",\n  \"type\" : \"object\",\n  \"properties\" :
+    {\n    \"id\" : {\n      \"type\" : \"string\",\n      \"maxLength\" : 36,\n      \"description\"
+    : \"The unique identifier for the resource.\",\n      \"required\": true\n    },\n
+    \   \"type\" : {\n      \"type\" : \"string\",\n      \"description\" : \"The
+    type of the resource.\"\n    },\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"description\" : \"The realm of the resource.\"\n    }\n  }\n}\n"
+- resource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resource\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"description\" : \"Core schema\",\n
+    \ \"definitions\" : {\n    \"resource\" : {\n      \"id\" : \"resource\",\n      \"type\"
+    : \"object\",\n      \"description\" : \"A basic resource.\",\n      \"properties\"
+    : {\n        \"id\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The unique identifier for this resource.\",\n
+    \         \"required\": true\n        },\n        \"version\": {\n          \"type\"
+    : \"number\",\n          \"minimum\" : 0,\n          \"maximum\" : 9223372036854775807,\n
+    \         \"description\" : \"The current version for this resource.  Exists once
+    the resource has been saved. This is mandatory for PUT requests, but should not
+    be supplied for POST requests.\",\n          \"required\": false\n        },\n
+    \       \"creator\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The creator of this resource. This is mandatory
+    if x-requestor header is NOT available\",\n          \"required\": false\n        },\n
+    \       \"creatorAppId\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The application id of the creator of this
+    resource.\",\n          \"required\": false\n        },\n        \"creation\"
+    : {\n          \"type\" : \"number\",\n          \"minimum\" : 0,\n          \"maximum\"
+    : 9223372036854775807,\n          \"description\" : \"If this value is provided
+    in a POST / PUT request body, it will be ignored and system will generate value
+    as time, in milliseconds since the epoch, when this resource was created or upda\",\n
+    \         \"required\": false            \n        }\n      }\n    }\n  }\n}\n"
+- realmScopedResource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/realmScopedResource\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Expands on the base resource and adds a realm attribute.\",\n
+    \ \"extends\" : {\n        \"$ref\" : \"http://api.covisint.com/schema/resource#\"\n
+    \ },\n  \"properties\" : {\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"maxLength\" : 16,\n      \"pattern\" : \"^[A-Za-z0-9]{2,25}$\",\n      \"description\"
+    : \"The realm in which this resource is being created. This is mandatory if x-realm
+    header is NOT available\",\n      \"required\": false\n    }\n  }\n}\n"
+- errorResponseSchema: ! "{\n  \"id\" : \"http://api.covisint.com/schema/errorResponseSchema\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Representation of an HTTP 4xx/5xx error response.\",\n  \"properties\"
+    : {\n    \"status\" : { \n      \"type\" : \"number\",\n      \"minimum\" : 400,\n
+    \     \"maximum\" : 599,\n      \"description\" : \"The HTTP status code.\",\n
+    \     \"required\": true\n    },\n    \"apiMessage\" : { \n      \"type\" : \"string\",\n
+    \     \"description\" : \"A helpful, human-readable description of the error,
+    useful for basic diagnostics.\" \n    },\n    \"apiStatusCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"The API-specific status code.\"\n    }\n\n
+    \ }\n}\n"
+- serviceCode: ! "{\n  \"id\" : \"http://api.covisint.com/schema/serviceCodes\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\": \"object\",\n
+    \ \"description\": \"The site/service/location codes granted along with a service.\",\n
+    \ \"properties\": {\n    \"code\": { \"type\": \"string\", \"required\": true,
+    \"maxLength\": 200, \"description\": \"The code value.\" },\n    \"codeKind\":
+    { \"type\": \"string\", \"required\": true, \"maxLength\": 36, \"description\":
+    \"The associated business unit.\" }\n  }\n}     \n"
+- serviceCodes: ! "{\n  \"type\" : \"array\",\n  \"description\" : \"The site/service/location
+    codes granted along with the service, if any.\",\n  \"items\" : { \"$ref\" : \"http://api.covisint.com/schema/serviceCode#\"},\n
+    \ \"required\": false\n}\n"
+- address: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/address\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"A container for the subject's address elements.\",\n  \"properties\" : {\n
+    \   \"type\" : \"string\",\n    \"streets\" : {\n        \"type\" : \"array\",\n
+    \       \"description\" : \"An array of address streets (i.e. address line 1,
+    2, 3).\",\n        \"minItems\" : 0,\n        \"items\" : {\n          \"type\":
+    \"string\",\n          \"maxLength\" : 255\n        }\n      },\n      \"city\"
+    : { \"type\" : \"string\", \"maxLength\" : 60, \"description\" : \"The city name.\"
+    },\n      \"state\" : { \"type\" : \"string\", \"maxLength\" : 60, \"description\"
+    : \"The state/province name or code.\" },\n      \"postal\" : { \"type\" : \"string\",
+    \"maxLength\" : 10, \"description\" : \"The postal or zip code.\" },\n      \"country\"
+    : { \"type\" : \"string\", \"minLength\" : 2, \"maxLength\" : 3, \"description\"
+    : \"The ISO country code. http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\"}\n
+    \ }\n}\n"
+- phone: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/phone\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n    \"description\"
+    : \"A container for phone number details.\",\n    \"properties\" : {\n      \"number\"
+    : { \"type\" : \"string\",\"maxLength\" : 100, \"description\" : \"The phone number.\"
+    },\n      \"type\" : { \"enum\" : [ \"main\", \"mobile\", \"fax\" ], \"description\"
+    : \"The phone number type.\" }\n    },\n    \"required\" : [ \"type\" ]\n}             \n"
+- service: ! "{\n  \"id\" : \"http://api.covisint.com/schema/service\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"Schema representing a service resource.\",\n  \"extends\" : {\n        \"$ref\"
+    : \"http://api.covisint.com/schema/realmScopedResource#\"\n  },\n  \"properties\"
+    : {\n    \"id\" : {\n      \"maxLength\" : 15\n    },\n    \"version\": {\n      \"description\"
+    : \"The current version for this resource.  Exists once the resource has been
+    saved. This is mandatory for PUT requests, but should not be supplied for POST
+    requests. User supplied value will be ignored and will be set to the creation
+    value.\"\n    },\n    \"name\" : {\n      \"type\" : \"array\",\n      \"description\":
+    \"Internationalized service names.\",\n      \"required\": true,\n      \"minItems\":
+    1,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\":
+    {\n          \"lang\": { \"type\": \"string\", \"maxLength\": 10 },\n          \"text\":
+    { \"type\": \"string\", \"maxLength\": 2000 }\n        }\n      }\n    },\n    \"description\"
+    : {\n      \"type\" : \"array\",\n      \"description\": \"Internationalized service
+    descriptions.\",\n      \"required\": false,\n      \"minItems\": 0,\n      \"items\":
+    {\n        \"type\": \"object\",\n        \"properties\": {\n          \"lang\":
+    { \"type\": \"string\", \"maxLength\": 10 },\n          \"text\": { \"type\":
+    \"string\", \"maxLength\": 2000 }\n        }\n      }\n    },\n    \"parentService\":
+    {\n      \"description\": \"The parent service.  Used to create a service hierarchy.\",\n
+    \     \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n    },\n
+    \   \"category\" : {\n      \"type\" : \"array\",\n      \"description\": \"Internationalized
+    category names.\",\n      \"minItems\": 1,\n      \"items\": {\n        \"type\":
+    \"object\",\n        \"properties\": {\n          \"lang\": { \"type\": \"string\",
+    \"maxLength\": 10 },\n          \"text\": { \"type\": \"string\", \"maxLength\":
+    2000 }\n        }\n      }\n    },\n    \"owningOrganization\": {\n      \"description\":
+    \"The organization that owns this service.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n
+    \   },\n    \"urls\": {\n      \"type\": \"array\",\n      \"minItems\": 1,\n
+    \     \"required\": true,\n      \"description\": \"A listing of all URLs defined
+    for this service, by type.\",\n      \"items\": {\n        \"type\": \"object\",\n
+    \       \"properties\": {\n          \"type\": { \"type\": \"string\", \"description\":
+    \"The URL type.\", \"maxLength\": 100 },\n          \"value\": { \"type\": \"string\",
+    \"description\": \"The URL value.\", \"maxLength\": 4000 }\n        }\n      }\n
+    \   },\n    \"remoteAppId\": { \n      \"type\": \"string\", \n      \"description\":
+    \"Links this service to some remote application known to the client.\", \n      \"maxLength\":
+    500 \n    },\n    \"mobileServiceId\": {\n      \"type\": \"string\",\n      \"description\":
+    \"Mobile service id.\",\n      \"maxLength\": 200\n    },\n    \"federationConnectionWizard\":
+    {\n      \"type\": \"string\",\n      \"maxLength\": 255,\n      \"description\":
+    \"Location of the federation connection set-up wizard.  e.g. salesforce, unauthenticated
+    website, etc.\"\n    },\n    \"protected\": {\n      \"type\": \"boolean\",\n
+    \     \"description\": \"Indicates whether this service is synced back to cleartrust
+    entitlements server, and therefore protected by the ct web agent.\"\n    },\n
+    \   \"messagingEnabled\": {\n      \"type\": \"boolean\", \n      \"description\":
+    \"Indicates whether to perform messaging when this service is updated.\"\n    }\n
+    \ }\n}\n"
+- packageGrant: ! "{\n  \"id\" : \"http://api.covisint.com/schema/packageGrant\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"extends\" : {\n
+    \       \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n  },\n
+    \ \"type\" : \"object\",\n  \"description\" : \"Representation of a package grant.\",\n
+    \ \"properties\" : {\n    \"version\": {\n      \"description\" : \"The current
+    version for this resource.  Exists once the resource has been saved. This is mandatory
+    for PUT requests, but should not be supplied for POST requests. User supplied
+    value will be ignored and will be set to the creation value.\"\n    },\n    \"status\"
+    : { \n      \"type\" : \"string\",\n      \"enum\" : [ \"active\", \"revoked\",
+    \"expired\" ],\n      \"description\" : \"The status of the grant.  Only required
+    when grant is retrieved.  Not required when grant is created.\",\n      \"required\":
+    false\n    },\n    \"grantee\": {\n      \"description\": \"The subject owning
+    the grant\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    },\n    \"servicePackage\": {\n      \"description\":
+    \"The granted package.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    }\n  }\n}\n"
+- packageRequest: ! "{\n  \"id\" : \"http://api.covisint.com/schema/packageRequest\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing a package request resource.\",\n  \"extends\"
+    : {\n        \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"version\": {\n      \"description\" : \"The
+    current version for this resource.  Exists once the resource has been saved. This
+    is mandatory for PUT requests, but should not be supplied for POST requests. User
+    supplied value will be ignored and will be set to the creation value.\"\n    },\n
+    \   \"requestor\": { \n      \"description\": \"The subject for which this request
+    is being made\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    },\n    \"servicePackage\": {\n      \"description\":
+    \"The package being requested.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    },\n    \"reason\": {\n      \"type\": \"string\",\n
+    \     \"description\": \"The justification for the request.\",\n      \"maxLength\":
+    1000\n    },\n    \"prerequisite\": {\n      \"description\": \"The parent request,
+    if applicable.\",\n      \"extends\": {\n        \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n
+    \     }\n    }\n  }\n}      \n"
+- package: ! "{\n  \"id\" : \"http://api.covisint.com/schema/service\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"Schema representing a package resource.\",\n  \"extends\" : {\n        \"$ref\"
+    : \"http://api.covisint.com/schema/realmScopedResource#\"\n  },\n  \"properties\"
+    : {\n    \"id\": {\n     \"maxLength\" : 15\n    }, \n    \"version\": {\n      \"description\"
+    : \"The current version for this resource.  Exists once the resource has been
+    saved. This is mandatory for PUT requests, but should not be supplied for POST
+    requests. User supplied value will be ignored and will be set to the creation
+    value.\"\n    },\n    \"owningOrganization\": {\n      \"description\": \"The
+    organization that owns this package.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    },\n    \"parent\": {\n      \"description\": \"The
+    parent package.  Used to create a package hierarchy.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n
+    \   },\n    \"termsAndConditions\": {\n      \"type\": \"array\",\n      \"minItems\":
+    1,\n      \"items\": {\n      \"type\": \"object\",\n        \"properties\": {\n
+    \         \"type\": { \n            \"type\": \"string\", \n            \"enum\":
+    [ \"person\", \"organization\" ],\n            \"description\": \"The target entity
+    of the terms and conditions.\"\n          },\n          \"tacId\": {\n            \"type\":
+    \"string\", \n            \"description\": \"The identifier of the T&C record.\",\n
+    \           \"maxLength\": 36\n          }\n        }\n      }\n    },\n    \"protected\":
+    {\n      \"type\": \"boolean\",\n      \"description\": \"Indicates whether this
+    package is synced back to cleartrust entitlements server, and therefore protected
+    by the ct web agent.\"\n    },\n    \"requestable\": {\n      \"type\": \"boolean\",\n
+    \     \"description\": \"Indicates whether this package may be requested by persons
+    or organizations.\"\n    },\n    \"grantable\": {\n      \"type\": \"boolean\",\n
+    \     \"description\": \"Indicates whether this package may be granted to persons
+    or organizations.\"\n    },                                    \n    \"displayable\":
+    {\n      \"type\": \"boolean\",\n      \"description\": \"Indicates whether this
+    package may be displayed or should be suppressed in UIs.\"\n    },                                    \n
+    \   \"requestReasonRequired\": {\n      \"type\": \"boolean\",\n      \"description\":
+    \"Indicates whether package requests must be accompanied by a reason supplied
+    by the requestor.\"\n    },                                    \n    \"name\"
+    : {\n      \"type\" : \"array\",\n      \"description\": \"Internationalized package
+    names.\",\n      \"required\": true,\n      \"minItems\": 1,\n      \"items\":
+    {\n        \"type\": \"object\",\n        \"properties\": {\n          \"lang\":
+    { \"type\": \"string\", \"maxLength\": 10 },\n          \"text\": { \"type\":
+    \"string\", \"maxLength\": 2000 }\n        }\n      }\n    },\n    \"description\"
+    : {\n      \"type\" : \"array\",\n      \"description\": \"Internationalized package
+    descriptions.\",\n      \"required\": false,\n      \"minItems\": 0,\n      \"items\":
+    {\n        \"type\": \"object\",\n        \"properties\": {\n          \"lang\":
+    { \"type\": \"string\", \"maxLength\": 10 },\n          \"text\": { \"type\":
+    \"string\", \"maxLength\": 2000 }\n        }\n      }\n    },\n    \"category\"
+    : {\n      \"type\" : \"array\",\n      \"description\": \"Internationalized category
+    names.\",\n      \"minItems\": 1,\n      \"items\": {\n        \"type\": \"object\",\n
+    \       \"properties\": {\n          \"lang\": { \"type\": \"string\", \"maxLength\":
+    10 },\n          \"text\": { \"type\": \"string\", \"maxLength\": 2000 }\n        }\n
+    \     },\n      \"required\": true\n    },\n    \"requiredApprovals\" : {\n      \"type\"
+    : \"array\",\n      \"description\": \"List of approval actors required to make
+    decisions on package requests before it can be granted.\",\n      \"minItems\":
+    0,\n      \"items\": {\n        \"enum\" : [ \"organizationAdmin\", \"applicationAdmin\",
+    \"provisioningAdmin\" ]\n      }\n    }\n  }\n}\n\n  \n"
+traits:
+- secured:
+    usage: Apply this to any method that needs to be secured
+    description: Requests requires authentication using a bearer token.
+    headers:
+      Authorization:
+        description: Access token that is obtained from the /token endpoint of the
+          oauth API.
+        pattern: ^Bearer .*$
+        example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+        required: true
+    responses:
+      401:
+        description: Unauthenticated request.  This is returned if the access token
+          is missing, invalid, or expired.  Access tokens are obtained through the
+          /token endpoint of the Oauth API.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      403:
+        description: Unauthorized request.  The requestor is not authorized to perform
+          the requested operation.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- getResponse:
+    responses:
+      404: &16532440
+        description: The URI requested is invalid or the resource requested does not
+          exist.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      406: &16529480
+        description: Unable to produce content of specified 'Accept' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: &16526720
+        description: An unknown server error occurred
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- postResponse:
+    responses:
+      406: *16529480
+      415: &16541280
+        description: Unable to consume content of specified 'Content-Type' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: *16526720
+- deleteResponse:
+    responses:
+      404: *16532440
+      406: *16529480
+      500: *16526720
+- putResponse:
+    responses:
+      404: *16532440
+      406: *16529480
+      409:
+        description: There is a conflict in identifying the resource being acted on.  There
+          are two categories.  (1) The unique identifier in the URL and in the body
+          are different.  (2) The current version of the resource being updated and
+          the version sent in the body of the request. This may be an indication that
+          the resource has changed since the client loaded it. The conflict should
+          be resolved and the update resubmitted with the current version of the resource.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      415: *16541280
+      500: *16526720
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
+/services:
+  is:
+  - secured
+  description: collection endpoint for service resources.
+  get:
+    is:
+    - getResponse
+    description: Performs a search for service resources. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.service.v1+json
+        type: string
+        required: true
+    queryParameters:
+      id:
+        description: Filter the search results by the given id.  May provide an array
+          of ids.
+        type: string
+        maxLength: 36
+        required: false
+      name:
+        description: Retrieve only services with the specified name.  The search is
+          case-insensitive and is performed across all available languages.  Multiple
+          parameters are supported and the search results will be a union.
+        type: string
+        maxLength: 300
+        required: false
+      description:
+        description: Retrieve only services with the specified description.  The search
+          is case-insensitive and is performed across all available languages.  Multiple
+          parameters are supported and the search results will be a union.
+        type: string
+        maxLength: 300
+        required: false
+      category:
+        description: Retrieve only services assigned to a specific category.  The
+          search is case-insensitive and is performed across all available languages.  Multiple
+          parameters are supported and the search results will be a union.
+        type: string
+        maxLength: 300
+        required: false
+      parentService.id:
+        description: Retrieve services that are children of the given parent service
+          id.  Multiple parameters are supported in which case retrieval of children
+          services of all specified parent services will be performed.  Note that
+          this only includes immediate children, and not grandchildren or deeper.
+        type: string
+        maxLength: 36
+        required: false
+      owningOrganization.id:
+        description: Retrieve services that are owned by the given organization id.  Multiple
+          parameters are supported to allow retrieving services of multiple organizations
+          at one time.
+        type: string
+        maxLength: 36
+        required: false
+      remoteAppId:
+        description: Filter the search results by the given remote application id.  Multiple
+          parameters are supported.
+        type: string
+        maxLength: 36
+        required: false
+      mobileServiceId:
+        description: Filter the search results by given mobile service id.  Multiple
+          parameters are supported.
+        type: string
+        maxLength: 36
+        required: false
+      sortBy:
+        description: Sort the search results.  Currently creation is the only sortable
+          property.
+        type: string
+        required: false
+        enum:
+        - creation
+    responses:
+      200:
+        description: All services that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.service.v1+json:
+            schema: service
+      400:
+        description: There was a problem with the client's request
+  post:
+    is:
+    - postResponse
+    description: Creates a new service. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.service.v1+json
+        type: string
+        required: true
+      Content-type:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.service.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.service.v1+json:
+        schema: service
+    responses:
+      201:
+        description: The service was successfully created
+        body:
+          application/vnd.com.covisint.platform.service.v1+json:
+            schema: service
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{id}:
+    uriParameters:
+      id:
+        description: Unique identifier of the service.
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    description: individual resource endpoint for service resources.
+    get:
+      is:
+      - getResponse
+      description: Returns the service by its unique id. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.service.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The service was successfully retrieved.
+          body:
+            application/vnd.com.covisint.platform.service.v1+json:
+              schema: service
+        400:
+          description: There was a problem with the client's request
+/packages:
+  is:
+  - secured
+  description: collection endpoint for package resources
+  get:
+    is:
+    - getResponse
+    description: Performs a search for packages. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+    queryParameters:
+      name:
+        description: Retrieve only packages with the specified name.  The search is
+          case-insensitive and looks at all available languages.  Multiple parameters
+          are supported and the search results will be a union.
+        type: string
+        maxLength: 36
+        required: false
+      description:
+        description: Retrieve only packages with the specified description.  The search
+          is case-insensitive and looks at all available languages.  Multiple parameters
+          are supported and the search results will be a union.
+        type: string
+        maxLength: 36
+        required: false
+      category:
+        description: Retrieve only packages assigned to the given category.  The search
+          is case-insensitve.  Multiple parameters are supported and the search results
+          will be a union.
+        type: string
+        maxLength: 36
+        required: false
+      owningOrganization.id:
+        description: Return all packages owned by the given organization id.  Multiple
+          parameters are supported, which will return packages that are owned by any
+          of the given organizations.
+        type: string
+        maxLength: 36
+        required: false
+      parentPackage.id:
+        description: Return all children packages of the given parent package.  Multiple
+          parameters are supported, which will return child packages of all given
+          parent packages.
+        type: string
+        maxLength: 36
+        required: false
+      grantable:
+        description: Return all packages that are flagged as grantable.
+        type: boolean
+        required: false
+      requestable:
+        description: Return all packages that are flagged as requestable.
+        type: boolean
+        required: false
+      sortBy:
+        description: Sort the search results according to creation timestamp property.
+        type: string
+        required: false
+        enum:
+        - creation
+    responses:
+      200:
+        description: All packages that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.v1+json:
+            schema: package
+      400:
+        description: There was a problem with the client's request
+  post:
+    is:
+    - postResponse
+    description: Creates a new package. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+      Content-type:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.package.v1+json:
+        schema: package
+    responses:
+      201:
+        description: The package was successfully created
+        body:
+          application/vnd.com.covisint.platform.package.v1+json:
+            schema: package
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{packageId}:
+    description: individual resource endpoint for packages.
+    uriParameters:
+      packageId:
+        description: Unique identifier of the package
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    get:
+      is:
+      - getResponse
+      description: Returns the package by its id. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.v1+json:
+              schema: package
+        400:
+          description: There was a problem with the client's request
+    /services:
+      description: collection endpoints for the services that are members of this
+        package.
+      is:
+      - secured
+      get:
+        is:
+        - getResponse
+        description: get the services that are members of this package. [Since:1.0]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.v1+json
+            type: string
+            required: true
+        responses:
+          200:
+            description: the member services were successfully retrieved.
+            body:
+              application/vnd.com.covisint.platform.service.v1+json:
+                schema: service
+          400:
+            description: There was a problem with the client's request
+      /{serviceId}:
+        description: used to modify service membership of a package.
+        uriParameters:
+          serviceId:
+            description: Unique identifier of the service.
+            type: string
+            maxLength: 36
+            required: true
+        is:
+        - secured
+        put:
+          is:
+          - putResponse
+          description: Assigns the given service as a member of the package. [Since:1.0]
+          headers: 
+          responses:
+            204:
+              description: The service was successfully added to the package.
+            400:
+              description: There was a problem with the client's request
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+        delete:
+          is:
+          - deleteResponse
+          description: Removes the given service from the package. [Since:1.0]
+          headers: 
+          responses:
+            204:
+              description: The service was successfully removed from the package.
+            400:
+              description: There was a problem with the client's request
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+/persons/{personId}/packages:
+  is:
+  - secured
+  description: collection endpoint for user package grant resources
+  uriParameters:
+    personId:
+      description: The id of the person for whom this grant is being made.
+      type: string
+      maxLength: 36
+      required: true
+  get:
+    is:
+    - getResponse
+    description: Performs a search for a person's package grants. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+        type: string
+        required: true
+    responses:
+      200:
+        description: All package grants that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+            schema: packageGrant
+      400:
+        description: There was a problem with the client's request
+  /{packageId}:
+    uriParameters:
+      packageId:
+        description: Unique identifier of the granted package.
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    description: individual resource endpoint for package grants
+    get:
+      is:
+      - getResponse
+      description: Returns the package grant [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package grant was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+              schema: packageGrant
+        400:
+          description: There was a problem with the client's request
+    put:
+      is:
+      - putResponse
+      description: Grant (push) a package to a person. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
+          type: string
+          required: true
+        Content-type:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.package.grant.v1+json:
+          schema: packageGrant
+      responses:
+        200:
+          description: The package grant was successfully created
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json:
+              schema: packageGrant
+        400:
+          description: There was a problem with the client's request
+        409:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+/organizations/{organizationId}/packages:
+  is:
+  - secured
+  description: collection endpoint for organization package grant resources
+  uriParameters:
+    organizationId:
+      description: The id of the organization for whom this grant is being made.
+      type: string
+      maxLength: 36
+      required: true
+  get:
+    is:
+    - getResponse
+    description: Performs a search for an organization's package grants. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+        type: string
+        required: true
+    responses:
+      200:
+        description: All package grants that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+            schema: packageGrant
+      400:
+        description: There was a problem with the client's request
+  /{packageId}:
+    uriParameters:
+      packageId:
+        description: Unique identifier of the granted package.
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    description: individual resource endpoint for package grants
+    get:
+      is:
+      - getResponse
+      description: Returns the package grant [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package grant was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+              schema: packageGrant
+        400:
+          description: There was a problem with the client's request
+    put:
+      is:
+      - putResponse
+      description: Grant (push) a package to an organization. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
+          type: string
+          required: true
+        Content-type:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.package.grant.v1+json:
+          schema: packageGrant
+      responses:
+        200:
+          description: The package grant was successfully created
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json:
+              schema: packageGrant
+        400:
+          description: There was a problem with the client's request
+        409:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+/requests:
+  is:
+  - secured
+  description: collection endpoint for package request resources
+  get:
+    is:
+    - getResponse
+    description: Performs a search for package requests. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.request.v1+json
+        type: string
+        required: true
+    queryParameters:
+      requestor.id:
+        description: The subject requesting the package.
+        type: string
+        maxLength: 36
+        required: false
+      requestor.type:
+        description: The type of subject requesting the package.
+        type: string
+        enum:
+        - person
+        - organization
+        required: false
+    responses:
+      200:
+        description: All package requests that satisfy the query parameters were successfully
+          retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.request.v1+json:
+            schema: packageRequest
+      400:
+        description: There was a problem with the client's request
+  post:
+    is:
+    - postResponse
+    description: Creates a new request for a package. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.request.v1+json
+        type: string
+        required: true
+      Content-Type:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.request.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.package.request.v1+json:
+        schema: packageRequest
+    responses:
+      201:
+        description: The package request was successfully created
+        body:
+          application/vnd.com.covisint.platform.package.request.v1+json:
+            schema: packageRequest
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{id}:
+    uriParameters:
+      id:
+        description: Unique identifier of the package request
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    description: individual resource endpoint for package requests
+    get:
+      is:
+      - getResponse
+      description: Returns the package request [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.request.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package request was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.request.v1+json:
+              schema: packageRequest
+        400:
+          description: There was a problem with the client's request
+    delete:
+      is:
+      - deleteResponse
+      description: Deletes (cancels) an existing package request. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.request.v1+json
+          type: string
+          required: false
+      body:
+        application/vnd.com.covisint.platform.package.request.v1+json:
+          schema: packageRequest
+      responses:
+        204:
+          description: The package request was successfully deleted
+        400:
+          description: There was a problem with the client's request
+  /tasks/approve:
+    is:
+    - secured
+    description: endpoint used to approve package requests for person requestors.
+      [Since:1.0]
+    post:
+      is:
+      - postResponse
+      description: Approve a package request.
+      headers: 
+      queryParameters:
+        requestId:
+          description: the request id.
+          type: string
+          maxLength: 36
+          required: true
+        justification:
+          description: optional justification for the decision.
+          type: string
+          maxLength: 1000
+          required: false
+      responses:
+        202:
+          description: The approval decision was accepted and will be processed accordingly.  No
+            response entity body.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /tasks/deny:
+    is:
+    - secured
+    description: endpoint used to reject package requests for person requestors. [Since:1.0]
+    post:
+      is:
+      - postResponse
+      description: Deny a package request.
+      headers: 
+      queryParameters:
+        requestId:
+          description: the request id.
+          type: string
+          maxLength: 36
+          required: true
+        justification:
+          description: optional justification for the denial.
+          type: string
+          maxLength: 1000
+          required: false
+      responses:
+        202:
+          description: The denial decision was accepted and will be processed.  No
+            response entity body.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema

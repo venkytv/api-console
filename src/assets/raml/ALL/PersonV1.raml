@@ -1,0 +1,1009 @@
+#%RAML 0.8
+title: Person API
+baseUri: https://api.covisintrnd.com/person/v1
+protocols:
+- HTTPS
+schemas:
+- resourceReference: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resourceReference\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"description\"
+    : \"Schema representing links\",\n  \"type\" : \"object\",\n  \"properties\" :
+    {\n    \"id\" : {\n      \"type\" : \"string\",\n      \"maxLength\" : 36,\n      \"description\"
+    : \"The unique identifier for the resource.\",\n      \"required\": true\n    },\n
+    \   \"type\" : {\n      \"type\" : \"string\",\n      \"description\" : \"The
+    type of the resource.\"\n    },\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"description\" : \"The realm of the resource.\"\n    }\n  }\n}\n"
+- resource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/resource\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"description\" : \"Core schema\",\n
+    \ \"definitions\" : {\n    \"resource\" : {\n      \"id\" : \"resource\",\n      \"type\"
+    : \"object\",\n      \"description\" : \"A basic resource.\",\n      \"properties\"
+    : {\n        \"id\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The unique identifier for this resource.\",\n
+    \         \"required\": true\n        },\n        \"version\": {\n          \"type\"
+    : \"number\",\n          \"minimum\" : 0,\n          \"maximum\" : 9223372036854775807,\n
+    \         \"description\" : \"The current version for this resource.  Exists once
+    the resource has been saved. This is mandatory for PUT requests, but should not
+    be supplied for POST requests.\",\n          \"required\": false\n        },\n
+    \       \"creator\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The creator of this resource. This is mandatory
+    if x-requestor header is NOT available\",\n          \"required\": false\n        },\n
+    \       \"creatorAppId\" : {\n          \"type\" : \"string\",\n          \"maxLength\"
+    : 64,\n          \"description\" : \"The application id of the creator of this
+    resource.\",\n          \"required\": false\n        },\n        \"creation\"
+    : {\n          \"type\" : \"number\",\n          \"minimum\" : 0,\n          \"maximum\"
+    : 9223372036854775807,\n          \"description\" : \"If this value is provided
+    in a POST / PUT request body, it will be ignored and system will generate value
+    as time, in milliseconds since the epoch, when this resource was created or upda\",\n
+    \         \"required\": false            \n        }\n      }\n    }\n  }\n}\n"
+- realmScopedResource: ! "{\n  \"id\" : \"http://api.covisint.com/schema/realmScopedResource\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Expands on the base resource and adds a realm attribute.\",\n
+    \ \"extends\" : {\n        \"$ref\" : \"http://api.covisint.com/schema/resource#\"\n
+    \ },\n  \"properties\" : {\n    \"realm\" : {\n      \"type\" : \"string\",\n
+    \     \"maxLength\" : 16,\n      \"pattern\" : \"^[A-Za-z0-9]{2,25}$\",\n      \"description\"
+    : \"The realm in which this resource is being created. This is mandatory if x-realm
+    header is NOT available\",\n      \"required\": false\n    }\n  }\n}\n"
+- errorResponseSchema: ! "{\n  \"id\" : \"http://api.covisint.com/schema/errorResponseSchema\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Representation of an HTTP 4xx/5xx error response.\",\n  \"properties\"
+    : {\n    \"status\" : { \n      \"type\" : \"number\",\n      \"minimum\" : 400,\n
+    \     \"maximum\" : 599,\n      \"description\" : \"The HTTP status code.\",\n
+    \     \"required\": true\n    },\n    \"apiMessage\" : { \n      \"type\" : \"string\",\n
+    \     \"description\" : \"A helpful, human-readable description of the error,
+    useful for basic diagnostics.\" \n    },\n    \"apiStatusCode\" : {\n      \"type\"
+    : \"string\",\n      \"description\" : \"The API-specific status code.\"\n    }\n\n
+    \ }\n}\n"
+- serviceCode: ! "{\n  \"id\" : \"http://api.covisint.com/schema/serviceCodes\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\": \"object\",\n
+    \ \"description\": \"The site/service/location codes granted along with a service.\",\n
+    \ \"properties\": {\n    \"code\": { \"type\": \"string\", \"required\": true,
+    \"maxLength\": 200, \"description\": \"The code value.\" },\n    \"codeKind\":
+    { \"type\": \"string\", \"required\": true, \"maxLength\": 36, \"description\":
+    \"The associated business unit.\" }\n  }\n}     \n"
+- serviceCodes: ! "{\n  \"type\" : \"array\",\n  \"description\" : \"The site/service/location
+    codes granted along with the service, if any.\",\n  \"items\" : { \"$ref\" : \"http://api.covisint.com/schema/serviceCode#\"},\n
+    \ \"required\": false\n}\n"
+- address: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/address\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"A container for the subject's address elements.\",\n  \"properties\" : {\n
+    \   \"type\" : \"string\",\n    \"streets\" : {\n        \"type\" : \"array\",\n
+    \       \"description\" : \"An array of address streets (i.e. address line 1,
+    2, 3).\",\n        \"minItems\" : 0,\n        \"items\" : {\n          \"type\":
+    \"string\",\n          \"maxLength\" : 255\n        }\n      },\n      \"city\"
+    : { \"type\" : \"string\", \"maxLength\" : 60, \"description\" : \"The city name.\"
+    },\n      \"state\" : { \"type\" : \"string\", \"maxLength\" : 60, \"description\"
+    : \"The state/province name or code.\" },\n      \"postal\" : { \"type\" : \"string\",
+    \"maxLength\" : 10, \"description\" : \"The postal or zip code.\" },\n      \"country\"
+    : { \"type\" : \"string\", \"minLength\" : 2, \"maxLength\" : 3, \"description\"
+    : \"The ISO country code. http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\"}\n
+    \ }\n}\n"
+- phone: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/phone\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n    \"description\"
+    : \"A container for phone number details.\",\n    \"properties\" : {\n      \"number\"
+    : { \"type\" : \"string\",\"maxLength\" : 100, \"description\" : \"The phone number.\"
+    },\n      \"type\" : { \"enum\" : [ \"main\", \"mobile\", \"fax\" ], \"description\"
+    : \"The phone number type.\" }\n    },\n    \"required\" : [ \"type\" ]\n}             \n"
+- person: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/person/v1\",\n  \"$schema\"
+    : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n  \"description\"
+    : \"A representation of a person, according to the application/vnd.com.covisint.platform.person.v1+json
+    media type.\",\n  \"extends\" : {\n    \"$ref\" : \"http://api.covisint.com/idm/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"id\": {\n       \"maxLength\" : 100\n    },\n
+    \  \"version\": {\n      \"description\" : \"The current version for this resource.
+    \ Exists once the resource has been saved. This is mandatory for PUT requests,
+    but should not be supplied for POST requests. User supplied value will be ignored
+    and will be set to the creation value.\"\n    },\n    \"status\" : { \n      \"enum\"
+    : [ \"pending\", \"rejected\", \"active\", \"suspended\", \"inactive\", \"locked\",
+    \"expired\", \"unactivated\", \"preterminated\" ], \n      \"description\" : \"The
+    person's account status.  Statuses can be changed through tasks; value is ignored
+    on POST or PUT requests.\"\n    },\n    \"name\" : {\n      \"type\" : \"object\",\n
+    \     \"description\" : \"A container for the person's name elements\",\n      \"properties\"
+    : {\n        \"prefix\" : {\n          \"type\" : \"string\",\n          \"description\"
+    : \"The prefix to the person's name. For example: Mr., Mrs., Rev.\",\n          \"maxLength\"
+    : 100,\n          \"required\": false\n        },\n        \"given\" : {\n          \"type\"
+    : \"string\",\n          \"description\" : \"The person's given (first) name.\",\n
+    \         \"maxLength\" : 150,\n          \"required\": true\n        },\n        \"middle\":
+    {\n          \"type\" : \"string\",\n          \"description\" : \"The person's
+    middle name(s).\",\n          \"maxLength\" : 60,\n          \"required\": false\n
+    \       },\n        \"surname\": {\n          \"type\" : \"string\",\n          \"description\"
+    : \"The person's surname or family name.\",\n          \"maxLength\" : 150,\n
+    \         \"required\": true\n        },\n        \"suffix\" : {\n          \"type\"
+    : \"string\",\n          \"description\" : \"The person's name suffix. For example:
+    Jr., Ph.D., M.D.\",\n          \"maxLength\" : 60,\n          \"required\": false\n
+    \       }         \n      },\n      \"required\": true\n    },\n    \"addresses\"
+    : {\n      \"type\" : \"array\",\n      \"description\" : \"A container for the
+    person's addresses.\",\n      \"minItems\" : 0,\n      \"items\" : { \"ref\" :
+    \"http://api.covisint.com/idm/schema//address#\" },\n      \"required\": false\n
+    \   },\n    \"language\" : { \n      \"type\" : \"string\", \n      \"maxLength\"
+    : 2, \n      \"description\" : \"The person's preferred language. Should be in
+    ISO 639-1 format.\",\n      \"required\": true\n    },\n    \"timezone\" : { \n
+    \     \"type\" : \"string\", \n      \"description\" : \"The person's preferred
+    timezone.  Must be one of java.util.TimeZone#getAvailableIDS.\",\n      \"required\":
+    true\n    },\n    \"phones\" : {\n      \"type\" : \"array\",\n      \"description\"
+    : \"A container for the person's phone number(s).\",\n      \"minItems\" : 0,\n
+    \     \"items\" : { \"$ref\" : \"http://api.covisint.com/idm/schema/phone#\" },\n
+    \     \"required\": false\n    },\n    \"title\" : { \n      \"type\" : \"string\",
+    \n      \"maxLength\" : 60, \n      \"description\" : \"Person's Job Title\",\n
+    \     \"required\": false\n    },\n    \"email\" : {\n      \"type\" : \"string\",\n
+    \     \"maxLength\" : 1000, \n      \"description\" : \"The person's email address.\",\n
+    \     \"required\": true\n    },\n    \"organizationId\" : {\n      \"type\" :
+    \"string\",\n      \"description\" : \"The Organization's id\",\n      \"required\"
+    : true\n    },\n    \"currency\" : { \n      \"type\" : \"string\", \n      \"maxLength\"
+    : 10, \n      \"description\" : \"Person's preferred currency.  Must be a valid
+    ISO 4217 currency code.\",\n      \"required\": false\n    }\n  }\n}\n  \n"
+- passwordAccount-v1: ! "{\n  \"id\" : \"http://api.covisint.com/idm/schema/passwordAccount/v1\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"A representation of a password account.\",\n  \"extends\"
+    : {\n    \"$ref\" : \"http://api.covisint.com/idm/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"version\": {\n      \"description\" : \"The
+    current version for this resource.  Exists once the resource has been saved. This
+    is mandatory for PUT requests, but should not be supplied for POST requests. User
+    supplied value will be ignored.\"\n    },\n    \"username\" : {\n      \"type\"
+    : \"string\", \n      \"maxLength\" : 100,\n      \"description\" : \"The username
+    on the account.  This is typically what the user enters into the login box when
+    authenticating.\",\n      \"required\" : \"true\"\n    },\n    \"password\" :
+    { \n      \"type\" : \"string\", \n      \"description\" : \"The account password.\"\n
+    \   },\n    \"passwordPolicyId\" : { \n      \"type\" : \"string\", \n      \"description\"
+    : \"The unique identifier for the password policy governing the password.\",\n
+    \     \"required\": true\n    },\n    \"authenticationPolicyId\" : { \n      \"type\"
+    : \"string\", \n      \"description\" : \"The unique identifier for the authentication
+    policy governing the password.\",\n      \"required\": true\n    },\n    \"expiration\"
+    : { \n      \"type\" : \"number\", \n      \"description\" : \"The time, in milliseconds
+    since the epoch, when the password expires.\"\n    },\n    \"locked\" : {\n      \"type\"
+    : \"boolean\",\n      \"description\" : \"Whether or not the account is locked.\"\n
+    \   },\n    \"unlockInstant\" : { \n      \"type\" : \"number\", \n      \"description\"
+    : \"The time, in milliseconds since the epoch, when the account will be unlocked.
+    \ Will be zero if the account is not locked via a time-based mechanism.\"\n    }\n
+    \ }\n}\n"
+- personInvitation: ! "{\n  \"id\" : \"http://api.covisint.com/schema/personInvitation\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing an invitation for a person to register.\",\n
+    \ \"extends\" : {\n        \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {   \n    \"version\": {\n        \"description\" : \"The
+    current version for this resource.  Exists once the resource has been saved. This
+    is mandatory for PUT requests, but should not be supplied for POST requests. User
+    supplied value will be ignored and will be set to the creation value.\"\n    },
+    \        \n    \"email\" : {\n      \"type\" : \"string\",\n      \"description\":
+    \"The email address that is to receive the invitation.\",\n      \"maxLength\":
+    500,\n      \"required\": true\n    },\n    \"invitor\": { \n      \"description\":
+    \"The person that is sending the invitation.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n
+    \     \"required\": true\n    },                           \n    \"invitee\":
+    { \n      \"description\": \"An unactivated person that is to be used during the
+    registration initiated by this invitation.  This is an optional way to prepopulate
+    user attributes at invitation time.\",\n      \"$ref\": \"http://api.covisint.com/schema/resourceReference#\"\n
+    \   },   \n    \"targetOrganization\": { \n      \"description\": \"Organization
+    that the person will join as a result of the registration initiatied by this invitation.\",\n
+    \     \"$ref\": \"http://api.covisint.com/schema/resourceReference#\",\n      \"required\":
+    true\n    },\n    \"invitationCode\" : {\n      \"type\" : \"string\",\n      \"description\":
+    \"A system-generated invitation code.  This can aid in verification for systems
+    requiring a secured invitation process.\",\n      \"maxLength\": 500\n    }                                      \n
+    \ }\n}\n  \n"
+- personRequest: ! "{\n  \"id\" : \"http://api.covisint.com/schema/personRegistration\",\n
+    \ \"$schema\" : \"http://json-schema.org/draft-04/schema\",\n  \"type\" : \"object\",\n
+    \ \"description\" : \"Schema representing a registration of a person.\",\n  \"extends\"
+    : {\n        \"$ref\" : \"http://api.covisint.com/schema/realmScopedResource#\"\n
+    \ },\n  \"properties\" : {\n    \"version\": {\n        \"description\" : \"The
+    current version for this resource.  Exists once the resource has been saved. This
+    is mandatory for PUT requests, but should not be supplied for POST requests. User
+    supplied value will be ignored and will be set to the creation value.\"\n    },\n
+    \   \"registrant\": { \n      \"description\": \"The person that is being registered.
+    \ The person must be in pending status for the request to be valid.\",\n      \"$ref\":
+    \"http://api.covisint.com/schema/resourceReference#\",\n      \"required\": true\n
+    \   },\n    \"justification\" : {\n      \"type\" : \"string\",\n      \"description\":
+    \"The justification for the registration.\",\n      \"maxLength\": 1000,\n      \"required\":
+    true\n    },\n    \"servicePackageRequest\": { \n      \"properties\": {\n        \"packageId\":
+    { \"type\": \"string\", \"required\": true, \"maxLength\": 200, \"description\":
+    \"The unique service package identifier for the service package being requested
+    at time of registration.\" },\n        \"code\": { \"type\": \"string\", \"required\":
+    false, \"maxLength\": 50, \"description\": \"The code associated with the requested
+    service package.  To be specified if required by the service package.\" },\n        \"codeKind\":
+    { \"type\": \"string\", \"required\": false, \"maxLength\": 36, \"description\":
+    \"The kind of code.  Only applicable if code is provided.  This field is also
+    known as business unit.\" }\n      },\n      \"required\": true\n    }\n  }\n}\n"
+traits:
+- secured:
+    usage: Apply this to any method that needs to be secured
+    description: Requests requires authentication using a bearer token.
+    headers:
+      Authorization:
+        description: Access token that is obtained from the /token endpoint of the
+          oauth API.
+        pattern: ^Bearer .*$
+        example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+        required: true
+    responses:
+      401:
+        description: Unauthenticated request.  This is returned if the access token
+          is missing, invalid, or expired.  Access tokens are obtained through the
+          /token endpoint of the Oauth API.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      403:
+        description: Unauthorized request.  The requestor is not authorized to perform
+          the requested operation.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- getResponse:
+    responses:
+      404: &16278400
+        description: The URI requested is invalid or the resource requested does not
+          exist.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      406: &16277400
+        description: Unable to produce content of specified 'Accept' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: &16276300
+        description: An unknown server error occurred
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+- postResponse:
+    responses:
+      406: *16277400
+      415: &16272980
+        description: Unable to consume content of specified 'Content-Type' media type
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      500: *16276300
+- deleteResponse:
+    responses:
+      404: *16278400
+      406: *16277400
+      500: *16276300
+- putResponse:
+    responses:
+      404: *16278400
+      406: *16277400
+      409:
+        description: There is a conflict in identifying the resource being acted on.  There
+          are two categories.  (1) The unique identifier in the URL and in the body
+          are different.  (2) The current version of the resource being updated and
+          the version sent in the body of the request. This may be an indication that
+          the resource has changed since the client loaded it. The conflict should
+          be resolved and the update resubmitted with the current version of the resource.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+      415: *16272980
+      500: *16276300
+- pagableRequest:
+    queryParameters:
+      page:
+        description: Which page to return in the paginated results.  The first page
+          is page 1.
+        type: integer
+        required: false
+        minimum: 1
+        default: 1
+      pageSize:
+        description: How many items per page in the paginated results.
+        type: integer
+        required: false
+        minimum: 1
+        default: 50
+        maximum: 200
+/persons:
+  is:
+  - secured
+  get:
+    is:
+    - getResponse
+    - pagableRequest
+    description: Returns a collection of person objects [Since:1.0]
+    headers:
+      Accept:
+        description: Media type for person.
+        example: application/vnd.com.covisint.platform.person.v1+json
+        type: string
+        required: true
+    queryParameters:
+      id:
+        description: Retrieve person for a supplied person identifier.
+        type: string
+        required: false
+    responses:
+      200:
+        description: All person resources were successfully retrieved.
+        body:
+          application/vnd.com.covisint.platform.person.v1+json:
+            schema: person
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is:
+    - postResponse
+    description: Creates a new person in unactivated status. [Since:1.0]
+    headers:
+      Content-type:
+        description: Media type for person.
+        example: application/vnd.com.covisint.platform.person.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type for person.
+        example: application/vnd.com.covisint.platform.person.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.person.v1+json:
+        schema: person
+    responses:
+      201:
+        description: A new person was created in unactivated status and is returned
+          in the response body.
+        body:
+          application/vnd.com.covisint.platform.person.v1+json:
+            schema: person
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{personId}:
+    description: The endpoint for a specific person.
+    uriParameters:
+      personId:
+        description: The person's unique identifier.
+        type: string
+        required: true
+    is:
+    - secured
+    get:
+      is:
+      - getResponse
+      description: Returns a single person representation [Since:1.0]
+      headers:
+        Accept:
+          description: Media type for person.
+          example: application/vnd.com.covisint.platform.person.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The person resource was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.person.v1+json:
+              schema: person
+              example: ! "{\n    \"id\": \"TESTUSER\",\n    \"version\": 1397188800000,\n
+                \   \"creator\": \"TESTUSER\",\n    \"realm\": \"PROD\",\n    \"status\":
+                \"active\",\n    \"name\": {\n        \"prefix\": \"Mr.\",\n        \"given\":
+                \"John\",\n        \"middle\": \"M\",\n        \"surname\": \"Smith\",\n
+                \       \"suffix\": \"Sr.\"\n    },\n    \"addresses\": [\n        {\n
+                \           \"streets\": [\n                \"1 Main Street\",\n                \"Suite
+                200\",\n                \"c/o Ann Miller\"\n            ],\n            \"city\":
+                \"Detroit\",\n            \"state\": \"MI\",\n            \"postal\":
+                \"48303\",\n            \"country\": \"US\",\n            \"type\":
+                \"main\"\n        }\n    ],\n    \"language\": \"en\",\n    \"timezone\":
+                \"EST5EDT\",\n    \"phones\": [\n        {\n            \"type\":
+                \"main\",\n            \"number\": \"313-288-2562\"\n        },\n
+                \       {\n            \"type\": \"mobile\",\n            \"number\":
+                \"248-767-1572\"\n        },\n        {\n            \"type\": \"fax\",\n
+                \           \"number\": \"248-476-1303\"\n        }\n    ],\n    \"title\":
+                \"Security Administrator\",\n    \"email\": \"admin@covisint.com\",\n
+                \   \"currency\": \"USD\"\n}\n"
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    put:
+      is:
+      - putResponse
+      description: Updates a person resource's base demographical properties. [Since:1.0]
+      headers:
+        Content-type:
+          example: application/vnd.com.covisint.platform.person.v1+json
+          description: Media type for person.
+          type: string
+          required: true
+        Accept:
+          description: Media type for person.
+          example: application/vnd.com.covisint.platform.person.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.person.v1+json:
+          schema: person
+      responses:
+        200:
+          description: The person resource was successfully updated
+          body:
+            application/vnd.com.covisint.platform.person.v1+json:
+              schema: person
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    /accounts:
+      is:
+      - secured
+      description: Collection of a person's accounts.
+      get:
+        is:
+        - getResponse
+        description: Get all of a person's accounts. [Since:100.0]
+        headers:
+          Accept:
+            description: Media type for person's account.
+            example: application/vnd.com.covisint.platform.resourceReferences.v1+json
+            type: string
+            required: true
+        responses:
+          200:
+            description: The references to the accounts were successfully retrieved.  This
+              will be an empty array if no accounts exist.
+            body:
+              application/vnd.com.covisint.platform.resourceReferences.v1+json:
+                schema: resourceReferences
+          400:
+            description: There was a problem with the client's request
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /password:
+        is:
+        - secured
+        description: A person's password account, comprised of a username and password.
+        put:
+          is:
+          - putResponse
+          description: Create or update the password account. [Since:1.0]
+          headers:
+            Content-type:
+              description: Media type for person's password account.
+              example: application/vnd.com.covisint.platform.account.password.v1+json
+              type: string
+              required: true
+            Accept:
+              description: Media type for person's password account.
+              example: application/vnd.com.covisint.platform.account.password.v1+json
+              type: string
+              required: true
+          body:
+            application/vnd.com.covisint.platform.account.password.v1+json:
+              schema: passwordAccount-v1
+          responses:
+            200:
+              description: The person's password account was successfully created
+                or updated.  If the person was in unactivated status before the request
+                then the person is changed to pending status.
+              body:
+                application/vnd.com.covisint.platform.account.password.v1+json:
+                  schema: passwordAccount-v1
+            400:
+              description: There was a problem with the client's request
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+        get:
+          description: Returns the person's password account [Since:1.0]
+          is:
+          - secured
+          - getResponse
+          headers:
+            Accept:
+              description: Media type for a person password account.
+              example: application/vnd.com.covisint.platform.person.account.password.v1+json
+              type: string
+              required: true
+          responses:
+            200:
+              description: The person's password account was successfully retrieved.
+              body:
+                application/vnd.com.covisint.platform.person.account.password.v1+json:
+                  schema: passwordAccount-v1
+            400:
+              description: There was a problem with the client's request
+  /tasks/activate:
+    is:
+    - secured
+    description: Activate a person that is in pending status. A common workflow is
+      (1) POST /person, which creates a person in unactivated status. (2) PUT /person/accounts/password,
+      which adds a password account the person and moves the person to pending status.
+      (3) PUT /tasks/activate, which activates the person and moves the person to
+      active status.
+    post:
+      is:
+      - postResponse
+      description: Activate a person that is in pending status. [Since:1.0]
+      headers: 
+      queryParameters:
+        personId:
+          description: The unique identifier of the person to activate.
+          type: string
+          required: true
+          maxLength: 36
+      responses:
+        204:
+          description: The person resource was successfully activated.  The person
+            is changed to active status.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+        404:
+          description: Resource not found.
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /tasks/suspend:
+    is:
+    - secured
+    description: Suspend a person that is in active status.
+    post:
+      is:
+      - postResponse
+      description: Suspend a person that is in active status. [Since:1.0]
+      headers: 
+      queryParameters:
+        personId:
+          description: The unique identifier of the person to suspend.
+          type: string
+          required: true
+          maxLength: 36
+      responses:
+        204:
+          description: The person resource was successfully suspended.  The person
+            is changed to suspended status.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+        404:
+          description: Resource not found.
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /tasks/unsuspend:
+    is:
+    - secured
+    description: Unsuspend a person that is in suspended status.
+    post:
+      is:
+      - postResponse
+      description: Unsuspend a person that is in suspended status. [Since:1.0]
+      headers: 
+      queryParameters:
+        personId:
+          description: The unique identifier of the person to unsuspend.
+          type: string
+          required: true
+          maxLength: 36
+      responses:
+        204:
+          description: The person resource was successfully unsuspended.  The person
+            is changed to active status.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+        404:
+          description: Resource not found.
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+/personInvitations:
+  is:
+  - secured
+  description: Collection endpoint for person invitation resources
+  get:
+    is:
+    - getResponse
+    description: Performs a search for person invitations. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type for person invitation.
+        example: application/vnd.com.covisint.platform.person.invitation.v1+json
+        type: string
+        required: true
+    queryParameters:
+      invitorId:
+        description: Only retrieve person invitations for a certain invitor. Currently
+          there is no restriction on number of ids used.
+        type: string
+        required: false
+      inviteeId:
+        description: Only retrives person invitations for a certain invitee. Currently
+          there is no restriction on number of ids used.
+        type: string
+        required: false
+    responses:
+      200:
+        description: All person invitations that satisfy the query parameters were
+          successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.person.invitation.v1+json:
+            schema: personInvitation
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is:
+    - postResponse
+    description: Creates a new person invitation. [Since:1.0]
+    headers:
+      Content-type:
+        description: Media type for person invitation.
+        example: application/vnd.com.covisint.platform.person.invitation.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type for person invitation.
+        example: application/vnd.com.covisint.platform.person.invitation.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.person.invitation.v1+json:
+        schema: personInvitation
+    responses:
+      201:
+        description: A new person invitation was created and is returned in the response
+          body.
+        body:
+          application/vnd.com.covisint.platform.person.invitation.v1+json:
+            schema: personInvitation
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{invitationId}:
+    description: Endpoint for a specific person invitation.
+    uriParameters:
+      invitationId:
+        description: Unique identifier of the person invitation
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    get:
+      is:
+      - getResponse
+      description: Returns the person invitation by its unique id. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type for person invitation.
+          example: application/vnd.com.covisint.platform.person.invitation.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The person invitation was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.person.invitation.v1+json:
+              schema: personInvitation
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    delete:
+      is:
+      - deleteResponse
+      description: Deletes a person invitation. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type for person invitation.
+          example: application/vnd.com.covisint.platform.person.invitation.v1+json
+          type: string
+          required: false
+      responses:
+        204:
+          description: The person invitation was successfully deleted.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    /servicePackages:
+      is:
+      - secured
+      description: Packages associated with an invitation. [Since:100.0]
+      get:
+        is:
+        - getResponse
+        description: Returns the service packages associated to an invitation.
+        headers:
+          Accept:
+            description: Media type for service package.
+            example: application/vnd.com.covisint.platform.resourceReferences.v1+json
+            type: string
+            required: true
+        responses:
+          200:
+            description: The references to the packages were successfully retrieved.  This
+              will be an empty array if no packages exist.
+            body:
+              application/vnd.com.covisint.platform.resourceReferences.v1+json:
+                schema: resourceReferences
+          400:
+            description: There was a problem with the client's request
+      /{packageId}:
+        uriParameters:
+          packageId:
+            description: Unique identifier of the package
+            type: string
+            maxLength: 36
+            required: true
+        is:
+        - secured
+        put:
+          is:
+          - putResponse
+          description: Sets a package as being part of an invitation.
+          headers:
+            Content-type:
+              description: Media type for service package.
+              example: application/vnd.com.covisint.platform.resourceReferences.v1+json
+              type: string
+              required: true
+            Accept:
+              description: Media type for service package.
+              example: application/vnd.com.covisint.platform.resourceReferences.v1+json
+              type: string
+              required: true
+          responses:
+            200:
+              description: The service package was successfully added to the invitation.
+              body:
+                application/vnd.com.covisint.platform.resourceReference.v1+json:
+                  schema: resourceReference
+            400:
+              description: There was a problem with the client's request
+        delete:
+          is:
+          - deleteResponse
+          description: Deletes the package from being associated to the invitation.
+          headers:
+            Accept:
+              description: Media type for service package.
+              example: application/vnd.com.covisint.platform.resourceReferences.v1+json
+              type: string
+              required: false
+          responses:
+            204:
+              description: The package was successfully deleted from the invitation.
+            400:
+              description: There was a problem with the client's request
+        /codes:
+          is:
+          - secured
+          get:
+            is:
+            - getResponse
+            description: Returns the service codes associated to a service package
+              associated to an invitation.
+            headers:
+              Accept:
+                description: Media type for service code.
+                example: application/vnd.com.covisint.platform.service.codes.v1+json
+                type: string
+                required: true
+            responses:
+              200:
+                description: The service codes were successfully retrieved.  This
+                  will be an empty array if no codes exist.
+                body:
+                  application/vnd.com.covisint.platform.service.codes.v1+json:
+                    schema: service.codes
+              400:
+                description: There was a problem with the client's request
+          put:
+            is:
+            - putResponse
+            description: Updates the codes for a service package associated to an
+              invitation.
+            headers:
+              Content-type:
+                description: Media type for service code.
+                example: application/vnd.com.covisint.platform.service.codes.v1+json
+                type: string
+                required: true
+              Accept:
+                description: Media type for service code.
+                example: application/vnd.com.covisint.platform.service.codes.v1+json
+                type: string
+                required: true
+            responses:
+              200:
+                description: The service codes were successfully updated.
+                body:
+                  application/vnd.com.covisint.platform.service.codes.v1+json:
+                    schema: service.codes
+              400:
+                description: There was a problem with the client's request
+          delete:
+            is:
+            - deleteResponse
+            description: Deletes the codes for a service package associated to an
+              invitation.
+            headers:
+              Accept:
+                description: Media type for service code.
+                example: application/vnd.com.covisint.platform.service.codes.v1+json
+                type: string
+                required: false
+            responses:
+              204:
+                description: The codes were successfully deleted.
+              400:
+                description: There was a problem with the client's request
+  /tasks/accept:
+    is:
+    - secured
+    description: Task to accept the person invitation. [Since:1.0]
+    post:
+      is:
+      - postResponse
+      description: Accept the person invitation.  This also results in the invitation
+        being deleted. [Since:1.0]
+      headers: 
+      queryParameters:
+        inviteId:
+          description: The unique identifier of the invitation being accepted.
+          type: string
+          required: true
+          maxLength: 36
+        createdPersonId:
+          description: The unique identifier of the person created during the registration
+            process that was initiated by the accepted invitation.  This is specified
+            solely for tracking purposes.
+          type: string
+          required: true
+          maxLength: 36
+      responses:
+        204:
+          description: The invitation was successfully accepted.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+/requests:
+  is:
+  - secured
+  description: Collection endpoint for person request resources
+  get:
+    is:
+    - getResponse
+    description: Performs a search for person request. [Since:1.0]
+    headers:
+      Accept:
+        description: Media type for person request.
+        example: application/vnd.com.covisint.platform.person.request.v1+json
+        type: string
+        required: true
+    queryParameters:
+      registrantId:
+        description: Retrieve person requests for a supplied person identifier.
+        type: string
+        required: false
+    responses:
+      200:
+        description: All person requests that satisfy the query parameters were successfully
+          retrieved.  The response collection may be empty.
+        body:
+          application/vnd.com.covisint.platform.person.request.v1+json:
+            schema: personRequest
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is:
+    - postResponse
+    description: Creates a new person request. [Since:1.0]
+    headers:
+      Content-type:
+        description: Media type for person request.
+        example: application/vnd.com.covisint.platform.person.request.v1+json
+        type: string
+        required: true
+      Accept:
+        description: Media type for person request.
+        example: application/vnd.com.covisint.platform.person.request.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.person.request.v1+json:
+        schema: personRequest
+    responses:
+      201:
+        description: A new person registration was created and is returned in the
+          response body.
+        body:
+          application/vnd.com.covisint.platform.person.request.v1+json:
+            schema: personRequest
+      400:
+        description: There was a problem with the client's request
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{requestId}:
+    description: Endpoint for a specific person request.
+    uriParameters:
+      requestId:
+        description: Unique identifier of the person request
+        type: string
+        maxLength: 36
+        required: true
+    is:
+    - secured
+    get:
+      is:
+      - getResponse
+      description: Returns the person request by its unique id. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type for person request.
+          example: application/vnd.com.covisint.platform.person.request.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The person request was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.person.request.v1+json:
+              schema: personReques
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    delete:
+      is:
+      - deleteResponse
+      description: Deletes a person request. [Since:1.0]
+      headers:
+        Accept:
+          description: Media type for person request.
+          example: application/vnd.com.covisint.platform.person.request.v1+json
+          type: string
+          required: false
+      responses:
+        204:
+          description: The person request was successfully deleted.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /tasks/approve:
+    is:
+    - secured
+    description: Approve a person request.
+    post:
+      is:
+      - postResponse
+      description: Approve a person request. [Since:1.0]
+      headers: 
+      queryParameters:
+        requestId:
+          description: The unique identifier of the person request.
+          type: string
+          required: true
+      responses:
+        204:
+          description: The request was successfully approved.  The person is put into
+            active status.
+        400:
+          description: There was a problem with the client's request
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
