@@ -321,6 +321,11 @@ module.exports = function (grunt) {
   	}
   });
 
+  grunt.registerTask('buildwar', [
+    'build',
+    'war',
+  ]);
+
   grunt.registerTask('default', [
     'build',
     'war',
